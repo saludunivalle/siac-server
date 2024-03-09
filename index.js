@@ -21,7 +21,7 @@ router.post('/', async ( req, res) => {
   
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range:'PROGRAMAS!A1:AC97',
+        range:'PROGRAMAS!A1:AD97',
         key: 'AIzaSyDQTWi9NHU_UTjhVQ1Wb08qxREaRgD9v1g', 
     });
     console.log(sheetValuesToObject(response.data.values));   

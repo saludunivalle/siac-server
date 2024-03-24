@@ -2,6 +2,10 @@ const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const path = require('path');
+const stream = require("stream"); // Added
+const multer = require('multer');
+const fs = require('fs');
 const {sheetValuesToObject} = require('./utils');
 const { config } = require('dotenv');
 config();
@@ -15,7 +19,7 @@ let jwtClient = new google.auth.JWT(
   process.env.client_email,
   null,
   (process.env.private_key).replace(/\\n/g, '\n'),
-  ['https://www.googleapis.com/auth/spreadsheets']);
+  ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']);
 
   //authenticate request
   jwtClient.authorize(function (err, tokens) {
@@ -105,6 +109,55 @@ router.post('/', async ( req, res) => {
     })
   }
     
+});
+
+//drive
+
+const upload = multer();
+
+router.post('/upload', upload.single('file'), async ( req, res) => {
+  
+  try {
+    const drive = google.drive({
+      version: 'v3',
+      auth: jwtClient
+    })
+
+    const { path: filePath, originalname } = req.file;
+
+    const fileMetadata = {
+      name: originalname,
+      parents: ['1Y5dit9wGoK9iKsOd7W-ACjee8zlMhI7R'] 
+    };
+
+    const templateBuffer = Buffer.from( req.file.buffer,'base64');
+
+    const media = {
+      mimeType: req.file.mimetype,
+      body: new stream.PassThrough().end(templateBuffer),  
+    };
+  
+    console.log('llego');
+    console.log(req.file);
+    const response = await drive.files.create({
+        requestBody: fileMetadata,
+        media: media
+    });
+
+    console.log('Archivo subido correctamente a Google Drive:', response.data);
+
+    res.json({ success: true, message: 'Archivo subido correctamente a Google Drive', enlace: `https://drive.google.com/file/d/${response.data.id}/view`});
+
+    // console.log(`Se recibió el archivo: ${originalname}`);
+    // //console.log(drive);
+    // console.log(req?.form?.files);
+    // console.log(req?.files);
+    // console.log(req.body);
+    // res.json({files:''})
+  } catch (error) {
+    console.log(error);
+    return res.status(400).json({ error:error, status:false});
+  }
 });
 
 app.use(express.json());

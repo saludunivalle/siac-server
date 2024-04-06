@@ -83,7 +83,7 @@ router.post('/', async ( req, res) => {
           range = 'PROGRAMAS!A1:AE93';
           break;
         case 'Seguimientos':
-          range = 'SEGUIMIENTOS!';
+          range = 'SEGUIMIENTOS!A1:H100';
           break;
         case 'Permisos':
           range = 'PERMISOS!A1:C20';

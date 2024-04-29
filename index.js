@@ -80,7 +80,7 @@ router.post('/', async ( req, res) => {
       let range;
       switch (req.body.sheetName) {
         case 'Programas':
-          range = 'PROGRAMAS!A1:AG93';
+          range = 'PROGRAMAS!A1:AH93';
           break;
         case 'Seguimientos':
           range = 'SEGUIMIENTOS!A1:H100';

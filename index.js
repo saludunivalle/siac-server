@@ -89,7 +89,7 @@ router.post('/', async ( req, res) => {
           range = 'PERMISOS!A1:C20';
           break;
         case 'Proc_X_Doc':
-          range = 'PROC_X_PROG_DOCS!E1:H1000';
+          range = 'PROC_X_PROG_DOCS!A1:D1000';
           break;
         case 'Proc_Fases':
           range = 'PROC_FASES!A1:C1000';

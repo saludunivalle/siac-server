@@ -95,7 +95,7 @@ router.post('/', async ( req, res) => {
           range = 'PROC_FASES!A1:C1000';
           break;
         case 'Proc_X_Prog':
-          range = 'PROC_X_PROG_DOCS!A1:D1000';
+          range = 'PROC_X_PROG!A1:C1000';
           break;
         case 'Proc_Fases_Doc':
           range = 'PROC_FASES!F1:H1000';

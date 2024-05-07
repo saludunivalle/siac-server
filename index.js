@@ -46,7 +46,7 @@ router.post('/sendData', async ( req, res) => {
     const responseSheet = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range,
-      key: 'AIzaSyDQTWi9NHU_UTjhVQ1Wb08qxREaRgD9v1g',
+      key : process.env.key,
     });
     const currentValues = responseSheet.data.values;
     const nextRow = currentValues ? currentValues.length + 1 : 1;
@@ -58,7 +58,7 @@ router.post('/sendData', async ( req, res) => {
       resource: {
         values: insertData
       },
-      key: 'AIzaSyDQTWi9NHU_UTjhVQ1Wb08qxREaRgD9v1g',
+      key : process.env.key,
     })
     if (sheetsResponse.status === 200) {
       return res.status(200).json({ success: 'Se inserto correctamente', status:true});
@@ -107,7 +107,7 @@ router.post('/', async ( req, res) => {
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId,
         range,
-        key: 'AIzaSyDQTWi9NHU_UTjhVQ1Wb08qxREaRgD9v1g', 
+        key : process.env.key,
     });
     console.log(sheetValuesToObject(response.data.values));   
     res.json({

@@ -100,6 +100,15 @@ router.post('/', async ( req, res) => {
         case 'Proc_Fases_Doc':
           range = 'PROC_FASES!F1:H1000';
           break;
+        case 'Asig_X_Prog':
+          range = 'ASIG_X_PROG!A1:D1000';
+          break;
+        case 'Esc_Practica':
+          range = 'ESC_PRACTICA!A1:D1000';
+          break;
+        case 'Rel_Esc_Practica':
+          range = 'REL_ESC_PRACTICA!A1:E1000';
+          break;
         default:
           return res.status(400).json({ error: 'Nombre de hoja no válido' });
       }

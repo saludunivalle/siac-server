@@ -219,6 +219,83 @@ router.post('/docServ', async ( req, res) => {
     
 });
 
+//Para la base seguimiento  
+router.post('/sendSeguimiento', async ( req, res) => {
+  
+  try {
+    const {
+      insertData, 
+      sheetName
+    }=req.body
+    const spreadsheetId = '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys';
+    const range = sheetName;
+    const sheets = google.sheets({ version: 'v4' , auth: jwtClient });
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key : process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
+    const nextRow = currentValues ? currentValues.length + 1 : 1;
+    const updatedRange = `${range}!A${nextRow}`;
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: 'RAW', 
+      resource: {
+        values: insertData
+      },
+      key : process.env.key,
+    })
+    if (sheetsResponse.status === 200) {
+      return res.status(200).json({ success: 'Se inserto correctamente', status:true});
+    } else {
+      return res.status(400).json({ error: 'No se inserto', status:false});
+    }
+  } catch (error) {
+    return res.status(400).json({ error: 'Error en la conexion', status:false});
+  }
+});
+
+router.post('/docServ', async ( req, res) => {
+  
+  try {
+    // console.log(jwtClient);
+    const sheets = google.sheets({ version: 'v4',  auth: jwtClient });
+      const spreadsheetId = '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys';
+      let range;
+      switch (req.body.sheetName) {
+        case 'Programas_pm':
+          range = 'PROGRAMAS_PM!A1:G1000';
+          break;
+        case 'Escuela_om':
+          range = 'ESCUELAS!A1:P1000';
+          break;
+        default:
+          return res.status(400).json({ error: 'Nombre de hoja no válido' });
+      }
+
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+        key : process.env.key,
+    });
+    console.log(sheetValuesToObject(response.data.values));   
+    res.json({
+      status: true, 
+      data: sheetValuesToObject(response.data.values)
+    }) 
+  } catch (error) {
+    console.log('error', error); 
+    res.json({
+      status: false
+    })
+  }
+    
+});
+
+
+
 //drive
 
 const upload = multer();

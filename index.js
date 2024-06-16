@@ -257,7 +257,7 @@ router.post('/sendSeguimiento', async ( req, res) => {
   }
 });
 
-router.post('/docServ', async ( req, res) => {
+router.post('/seguimiento', async ( req, res) => {
   
   try {
     // console.log(jwtClient);

@@ -266,10 +266,10 @@ router.post('/seguimiento', async ( req, res) => {
       let range;
       switch (req.body.sheetName) {
         case 'Programas_pm':
-          range = 'PROGRAMAS_PM!A1:G1000';
+          range = 'PROGRAMAS_PM!A1:I1000';
           break;
         case 'Escuela_om':
-          range = 'ESCUELAS!A1:P1000';
+          range = 'ESCUELAS!A1:AB1000';
           break;
         default:
           return res.status(400).json({ error: 'Nombre de hoja no válido' });

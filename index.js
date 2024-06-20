@@ -294,6 +294,44 @@ router.post('/seguimiento', async ( req, res) => {
     
 });
 
+//Para Reporte Actividades 
+router.post('/sendReport', async ( req, res) => {
+  
+  try {
+    const {
+      insertData, 
+      sheetName
+    }=req.body
+    const spreadsheetId = '1R4Ugfx43AoBjxjsEKYl7qZsAY8AfFNUN_gwcqETwgio';
+    const range = sheetName;
+    const sheets = google.sheets({ version: 'v4' , auth: jwtClient });
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key : process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
+    const nextRow = currentValues ? currentValues.length + 1 : 1;
+    const updatedRange = `${range}!A${nextRow}`;
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: 'RAW', 
+      resource: {
+        values: insertData
+      },
+      key : process.env.key,
+    })
+    if (sheetsResponse.status === 200) {
+      return res.status(200).json({ success: 'Se inserto correctamente', status:true});
+    } else {
+      return res.status(400).json({ error: 'No se inserto', status:false});
+    }
+  } catch (error) {
+    return res.status(400).json({ error: 'Error en la conexion', status:false});
+  }
+});
+
 
 
 //drive

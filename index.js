@@ -295,20 +295,16 @@ router.post('/seguimiento', async ( req, res) => {
 });
 
 //Para Reporte Actividades 
-router.post('/sendReport', async ( req, res) => {
-  
+router.post('/sendReport', async (req, res) => {
+  const { insertData, sheetName } = req.body;
+  const spreadsheetId = '1R4Ugfx43AoBjxjsEKYl7qZsAY8AfFNUN_gwcqETwgio';
+  const range = sheetName;
   try {
-    const {
-      insertData, 
-      sheetName
-    }=req.body
-    const spreadsheetId = '1R4Ugfx43AoBjxjsEKYl7qZsAY8AfFNUN_gwcqETwgio';
-    const range = sheetName;
-    const sheets = google.sheets({ version: 'v4' , auth: jwtClient });
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
     const responseSheet = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range,
-      key : process.env.key,
+      key: process.env.key,
     });
     const currentValues = responseSheet.data.values;
     const nextRow = currentValues ? currentValues.length + 1 : 1;
@@ -316,19 +312,37 @@ router.post('/sendReport', async ( req, res) => {
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,
-      valueInputOption: 'RAW', 
+      valueInputOption: 'RAW',
       resource: {
-        values: insertData
+        values: insertData,
       },
-      key : process.env.key,
-    })
+      key: process.env.key,
+    });
     if (sheetsResponse.status === 200) {
-      return res.status(200).json({ success: 'Se inserto correctamente', status:true});
+      return res.status(200).json({ success: 'Se inserto correctamente', status: true });
     } else {
-      return res.status(400).json({ error: 'No se inserto', status:false});
+      return res.status(400).json({ error: 'No se inserto', status: false });
     }
   } catch (error) {
-    return res.status(400).json({ error: 'Error en la conexion', status:false});
+    console.error('Error al enviar datos:', error);
+    return res.status(400).json({ error: 'Error en la conexion', status: false });
+  }
+});
+
+
+router.post('/clearSheet', async (req, res) => {
+  const { spreadsheetId, sheetName } = req.body;
+  try {
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: `${sheetName}!A2:Z`,
+      key: process.env.key,
+    });
+    res.status(200).send('Hoja limpiada correctamente');
+  } catch (error) {
+    console.error('Error al limpiar la hoja:', error);
+    res.status(500).send('Error al limpiar la hoja');
   }
 });
 

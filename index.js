@@ -297,7 +297,7 @@ router.post('/seguimiento', async ( req, res) => {
 //Para Reporte Actividades 
 router.post('/sendReport', async (req, res) => {
   const { insertData, sheetName } = req.body;
-  console.log('Datos recibidos para insertar:', insertData); // <-- Log de los datos recibidos
+  console.log('Datos recibidos para insertar:', insertData); // Log de los datos recibidos
   const spreadsheetId = '1R4Ugfx43AoBjxjsEKYl7qZsAY8AfFNUN_gwcqETwgio';
   const range = sheetName;
   try {
@@ -319,7 +319,7 @@ router.post('/sendReport', async (req, res) => {
       },
       key: process.env.key,
     });
-    console.log('Respuesta de Google Sheets:', sheetsResponse.data); // <-- Log de la respuesta de Google Sheets
+    console.log('Respuesta de Google Sheets:', sheetsResponse.data); // Log de la respuesta de Google Sheets
     if (sheetsResponse.status === 200) {
       return res.status(200).json({ success: 'Se inserto correctamente', status: true });
     } else {

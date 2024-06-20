@@ -295,17 +295,20 @@ router.post('/seguimiento', async ( req, res) => {
 });
 
 //Para Reporte Actividades 
-router.post('/sendReport', async (req, res) => {
-  const { insertData, sheetName } = req.body;
-  console.log('Datos recibidos para insertar:', insertData); // Log de los datos recibidos
-  const spreadsheetId = '1R4Ugfx43AoBjxjsEKYl7qZsAY8AfFNUN_gwcqETwgio';
-  const range = sheetName;
+router.post('/sendReport', async ( req, res) => {
+  
   try {
-    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const {
+      insertData, 
+      sheetName
+    }=req.body
+    const spreadsheetId = '1R4Ugfx43AoBjxjsEKYl7qZsAY8AfFNUN_gwcqETwgio';
+    const range = sheetName;
+    const sheets = google.sheets({ version: 'v4' , auth: jwtClient });
     const responseSheet = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range,
-      key: process.env.key,
+      key : process.env.key,
     });
     const currentValues = responseSheet.data.values;
     const nextRow = currentValues ? currentValues.length + 1 : 1;
@@ -313,21 +316,19 @@ router.post('/sendReport', async (req, res) => {
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,
-      valueInputOption: 'RAW',
+      valueInputOption: 'RAW', 
       resource: {
-        values: insertData,
+        values: insertData
       },
-      key: process.env.key,
-    });
-    console.log('Respuesta de Google Sheets:', sheetsResponse.data); // Log de la respuesta de Google Sheets
+      key : process.env.key,
+    })
     if (sheetsResponse.status === 200) {
-      return res.status(200).json({ success: 'Se inserto correctamente', status: true });
+      return res.status(200).json({ success: 'Se inserto correctamente', status:true});
     } else {
-      return res.status(400).json({ error: 'No se inserto', status: false });
+      return res.status(400).json({ error: 'No se inserto', status:false});
     }
   } catch (error) {
-    console.error('Error al enviar datos:', error);
-    return res.status(400).json({ error: 'Error en la conexion', status: false });
+    return res.status(400).json({ error: 'Error en la conexion', status:false});
   }
 });
 

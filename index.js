@@ -294,6 +294,53 @@ router.post('/seguimiento', async ( req, res) => {
     
 });
 
+// Nueva ruta para actualizar una fila en la hoja de cálculo
+router.post('/updateSeguimiento', async (req, res) => {
+  try {
+    const {
+      updateData,
+      id,
+      sheetName
+    } = req.body;
+    const spreadsheetId = '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys';
+    const range = `${sheetName}!A1:Z1000`;
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
+
+    const rowIndex = currentValues.findIndex(row => row[0] == id);
+
+    if (rowIndex === -1) {
+      return res.status(404).json({ error: 'ID no encontrado', status: false });
+    }
+
+    const updatedRange = `${sheetName}!A${rowIndex + 1}`;
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: 'RAW',
+      resource: {
+        values: [updateData]
+      },
+      key: process.env.key,
+    });
+
+    if (sheetsResponse.status === 200) {
+      return res.status(200).json({ success: 'Se actualizó correctamente', status: true });
+    } else {
+      return res.status(400).json({ error: 'No se actualizó', status: false });
+    }
+  } catch (error) {
+    return res.status(400).json({ error: 'Error en la conexión', status: false });
+  }
+});
+
+
 //Para Reporte Actividades 
 router.post('/sendReport', async ( req, res) => {
   

@@ -8,15 +8,12 @@ const multer = require('multer');
 const fs = require('fs');
 const { sheetValuesToObject } = require('./utils');
 const { config } = require('dotenv');
-const NodeCache = require('node-cache');
 config();
 
 const app = express();
 const router = express.Router();
 const PORT = process.env.PORT || 3001;
-console.log(process.env.client_email, process.env.private_key);
 
-// Configure a JWT auth client
 let jwtClient = new google.auth.JWT(
   process.env.client_email,
   null,
@@ -24,129 +21,108 @@ let jwtClient = new google.auth.JWT(
   ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 );
 
-// Authenticate request
-jwtClient.authorize(function (err, tokens) {
+jwtClient.authorize((err) => {
   if (err) {
-      console.log(err, 'hear');
-      return;
+    console.log('Error connecting to Google APIs:', err);
   } else {
-      console.log("Successfully connected!");
+    console.log("Successfully connected to Google APIs!");
   }
 });
 
 app.use(bodyParser.json());
 app.use(cors());
 
-// Cache configuration
-const cache = new NodeCache({ stdTTL: 600 }); // Cache de 10 minutos
+const getSheetRange = (sheetName) => {
+  const ranges = {
+    'Programas': 'PROGRAMAS!A1:AH105',
+    'Seguimientos': 'SEGUIMIENTOS!A1:H1000',
+    'Permisos': 'PERMISOS!A1:C20',
+    'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E1000',
+    'Proc_Fases': 'PROC_FASES!A1:D1000',
+    'Proc_X_Prog': 'PROC_X_PROG!A1:C1000',
+    'Proc_Fases_Doc': 'PROC_FASES!I1:K1000',
+    'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
+    'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
+    'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000'
+  };
+  return ranges[sheetName];
+};
 
-// Function to get sheet data with caching
-async function getSheetData(spreadsheetId, range) {
-  const cacheKey = `${spreadsheetId}-${range}`;
-  const cachedData = cache.get(cacheKey);
-  if (cachedData) {
-    return cachedData;
-  } else {
+const handleSheetRequest = async (req, res, spreadsheetId) => {
+  try {
+    const { sheetName } = req.body;
+    const range = getSheetRange(sheetName);
+
+    if (!range) {
+      return res.status(400).json({ error: 'Nombre de hoja no válido' });
+    }
+
     const sheets = google.sheets({ version: 'v4', auth: jwtClient });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range,
       key: process.env.key,
     });
-    const data = response.data.values;
-    cache.set(cacheKey, data);
-    return data;
+    res.json({
+      status: true,
+      data: sheetValuesToObject(response.data.values)
+    });
+  } catch (error) {
+    console.log('Error en la solicitud:', error);
+    res.json({
+      status: false,
+      error: 'Error en la solicitud'
+    });
   }
-}
+};
 
-// Para la base Salud
 router.post('/sendData', async (req, res) => {
   try {
-      const { insertData, sheetName } = req.body;
-      console.log('Datos recibidos en el server:', insertData, sheetName);
-      const spreadsheetId = '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE';
-      const range = sheetName;
-      const currentValues = await getSheetData(spreadsheetId, range);
-      const nextRow = currentValues ? currentValues.length + 1 : 1;
-      const updatedRange = `${range}!A${nextRow}`;
-      const sheets = google.sheets({ version: 'v4', auth: jwtClient });
-      const sheetsResponse = await sheets.spreadsheets.values.update({
-          spreadsheetId,
-          range: updatedRange,
-          valueInputOption: 'RAW',
-          resource: { values: insertData },
-          key: process.env.key,
-      });
-      if (sheetsResponse.status === 200) {
-          cache.del(`${spreadsheetId}-${range}`); // Invalidate the cache
-          return res.status(200).json({ success: 'Se inserto correctamente', status: true });
-      } else {
-          return res.status(400).json({ error: 'No se inserto', status: false });
-      }
-  } catch (error) {
-      return res.status(400).json({ error: 'Error en la conexion', status: false });
-  }
-});
-
-
-router.post('/', async (req, res) => {
-  try {
-    const { sheetName } = req.body;
+    const { insertData, sheetName } = req.body;
     const spreadsheetId = '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE';
-    let range;
-    switch (sheetName) {
-      case 'Programas':
-        range = 'PROGRAMAS!A1:AH93';
-        break;
-      case 'Seguimientos':
-        range = 'SEGUIMIENTOS!A1:H1000';
-        break;
-      case 'Permisos':
-        range = 'PERMISOS!A1:C20';
-        break;
-      case 'Proc_X_Doc':
-        range = 'PROC_X_PROG_DOCS!A1:E1000';
-        break;
-      case 'Proc_Fases':
-        range = 'PROC_FASES!A1:E1000';
-        break;
-      case 'Proc_X_Prog':
-        range = 'PROC_X_PROG!A1:C1000';
-        break;
-      case 'Proc_Fases_Doc':
-        range = 'PROC_FASES!I1:K1000';
-        break;
-      case 'Asig_X_Prog':
-        range = 'ASIG_X_PROG!A1:D1000';
-        break;
-      case 'Esc_Practica':
-        range = 'ESC_PRACTICA!A1:D1000';
-        break;
-      case 'Rel_Esc_Practica':
-        range = 'REL_ESC_PRACTICA!A1:E1000';
-        break;
-      default:
-        return res.status(400).json({ error: 'Nombre de hoja no válido' });
+    const range = sheetName;
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
+    const nextRow = currentValues ? currentValues.length + 1 : 1;
+    const updatedRange = `${range}!A${nextRow}`;
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: 'RAW',
+      resource: { values: insertData },
+      key: process.env.key,
+    });
+    if (sheetsResponse.status === 200) {
+      return res.status(200).json({ success: 'Se insertó correctamente', status: true });
+    } else {
+      return res.status(400).json({ error: 'No se insertó', status: false });
     }
-
-    const data = await getSheetData(spreadsheetId, range);
-    res.json({ status: true, data: sheetValuesToObject(data) });
   } catch (error) {
-    console.log('error', error);
-    res.json({ status: false });
+    return res.status(400).json({ error: 'Error en la conexión', status: false });
   }
 });
 
-// Para la base Docencia Servicio
+router.post('/', (req, res) => handleSheetRequest(req, res, '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE'));
+
 router.post('/sendDocServ', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
     const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
     const range = sheetName;
-    const currentValues = await getSheetData(spreadsheetId, range);
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
     const nextRow = currentValues ? currentValues.length + 1 : 1;
     const updatedRange = `${range}!A${nextRow}`;
-    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,
@@ -155,59 +131,31 @@ router.post('/sendDocServ', async (req, res) => {
       key: process.env.key,
     });
     if (sheetsResponse.status === 200) {
-      cache.del(`${spreadsheetId}-${range}`); // Invalidate the cache
-      return res.status(200).json({ success: 'Se inserto correctamente', status: true });
+      return res.status(200).json({ success: 'Se insertó correctamente', status: true });
     } else {
-      return res.status(400).json({ error: 'No se inserto', status: false });
+      return res.status(400).json({ error: 'No se insertó', status: false });
     }
   } catch (error) {
-    return res.status(400).json({ error: 'Error en la conexion', status: false });
+    return res.status(400).json({ error: 'Error en la conexión', status: false });
   }
 });
 
-router.post('/docServ', async (req, res) => {
-  try {
-    const { sheetName } = req.body;
-    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
-    let range;
-    switch (sheetName) {
-      case 'Asig_X_Prog':
-        range = 'ASIG_X_PROG!A1:E1000';
-        break;
-      case 'Esc_Practica':
-        range = 'ESC_PRACTICA!A1:D1000';
-        break;
-      case 'Rel_Esc_Practica':
-        range = 'REL_ESC_PRACTICA!A1:G1000';
-        break;
-      case 'Horario':
-        range = 'HORARIOS_PRACT!A1:B1000';
-        break;
-      case 'firmas':
-        range = 'FIRMAS!A1:G1000';
-        break;
-      default:
-        return res.status(400).json({ error: 'Nombre de hoja no válido' });
-    }
+router.post('/docServ', (req, res) => handleSheetRequest(req, res, '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y'));
 
-    const data = await getSheetData(spreadsheetId, range);
-    res.json({ status: true, data: sheetValuesToObject(data) });
-  } catch (error) {
-    console.log('error', error);
-    res.json({ status: false });
-  }
-});
-
-// Para la base seguimiento  
 router.post('/sendSeguimiento', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
     const spreadsheetId = '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys';
     const range = sheetName;
-    const currentValues = await getSheetData(spreadsheetId, range);
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
     const nextRow = currentValues ? currentValues.length + 1 : 1;
     const updatedRange = `${range}!A${nextRow}`;
-    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,
@@ -216,41 +164,17 @@ router.post('/sendSeguimiento', async (req, res) => {
       key: process.env.key,
     });
     if (sheetsResponse.status === 200) {
-      cache.del(`${spreadsheetId}-${range}`); // Invalidate the cache
-      return res.status(200).json({ success: 'Se inserto correctamente', status: true });
+      return res.status(200).json({ success: 'Se insertó correctamente', status: true });
     } else {
-      return res.status(400).json({ error: 'No se inserto', status: false });
+      return res.status(400).json({ error: 'No se insertó', status: false });
     }
   } catch (error) {
-    return res.status(400).json({ error: 'Error en la conexion', status: false });
+    return res.status(400).json({ error: 'Error en la conexión', status: false });
   }
 });
 
-router.post('/seguimiento', async (req, res) => {
-  try {
-    const { sheetName } = req.body;
-    const spreadsheetId = '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys';
-    let range;
-    switch (sheetName) {
-      case 'Programas_pm':
-        range = 'PROGRAMAS_PM!A1:I1000';
-        break;
-      case 'Escuela_om':
-        range = 'ESCUELAS!A1:AB1000';
-        break;
-      default:
-        return res.status(400).json({ error: 'Nombre de hoja no válido' });
-    }
+router.post('/seguimiento', (req, res) => handleSheetRequest(req, res, '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys'));
 
-    const data = await getSheetData(spreadsheetId, range);
-    res.json({ status: true, data: sheetValuesToObject(data) });
-  } catch (error) {
-    console.log('error', error);
-    res.json({ status: false });
-  }
-});
-
-// Nueva ruta para actualizar una fila en la hoja de cálculo
 router.post('/updateSeguimiento', async (req, res) => {
   try {
     const { updateData, id, sheetName } = req.body;
@@ -264,12 +188,14 @@ router.post('/updateSeguimiento', async (req, res) => {
     const range = `${sheetName}!A1:Z1000`;
     const sheets = google.sheets({ version: 'v4', auth: jwtClient });
 
-    const currentValues = await getSheetData(spreadsheetId, range);
-    console.log('Valores actuales:', currentValues);
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
 
     const rowIndex = currentValues.findIndex(row => row[0] == id);
-    console.log('Índice de fila encontrado:', rowIndex);
-
     if (rowIndex === -1) {
       return res.status(404).json({ error: 'ID no encontrado', status: false });
     }
@@ -283,10 +209,7 @@ router.post('/updateSeguimiento', async (req, res) => {
       key: process.env.key,
     });
 
-    console.log('Respuesta de Google Sheets:', sheetsResponse);
-
     if (sheetsResponse.status === 200) {
-      cache.del(`${spreadsheetId}-${range}`); // Invalidate the cache
       return res.status(200).json({ success: 'Se actualizó correctamente', status: true });
     } else {
       return res.status(400).json({ error: 'No se actualizó', status: false });
@@ -297,16 +220,20 @@ router.post('/updateSeguimiento', async (req, res) => {
   }
 });
 
-// Para Reporte Actividades 
 router.post('/sendReport', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
     const spreadsheetId = '1R4Ugfx43AoBjxjsEKYl7qZsAY8AfFNUN_gwcqETwgio';
     const range = sheetName;
-    const currentValues = await getSheetData(spreadsheetId, range);
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
     const nextRow = currentValues ? currentValues.length + 1 : 1;
     const updatedRange = `${range}!A${nextRow}`;
-    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,
@@ -315,13 +242,12 @@ router.post('/sendReport', async (req, res) => {
       key: process.env.key,
     });
     if (sheetsResponse.status === 200) {
-      cache.del(`${spreadsheetId}-${range}`); // Invalidate the cache
-      return res.status(200).json({ success: 'Se inserto correctamente', status: true });
+      return res.status(200).json({ success: 'Se insertó correctamente', status: true });
     } else {
-      return res.status(400).json({ error: 'No se inserto', status: false });
+      return res.status(400).json({ error: 'No se insertó', status: false });
     }
   } catch (error) {
-    return res.status(400).json({ error: 'Error en la conexion', status: false });
+    return res.status(400).json({ error: 'Error en la conexión', status: false });
   }
 });
 
@@ -341,19 +267,24 @@ router.post('/clearSheet', async (req, res) => {
   }
 });
 
-// Drive
 const upload = multer();
 
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    const drive = google.drive({ version: 'v3', auth: jwtClient });
-    const { path: filePath, originalname } = req.file;
+    const drive = google.drive({
+      version: 'v3',
+      auth: jwtClient
+    });
+
+    const { originalname } = req.file;
+
     const fileMetadata = {
       name: originalname,
       parents: ['1Y5dit9wGoK9iKsOd7W-ACjee8zlMhI7R']
     };
 
     const templateBuffer = Buffer.from(req.file.buffer, 'base64');
+
     const media = {
       mimeType: req.file.mimetype,
       body: new stream.PassThrough().end(templateBuffer),
@@ -365,6 +296,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     });
 
     console.log('Archivo subido correctamente a Google Drive:', response.data);
+
     res.json({ success: true, message: 'Archivo subido correctamente a Google Drive', enlace: `https://drive.google.com/file/d/${response.data.id}/view` });
   } catch (error) {
     console.log(error);

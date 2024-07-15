@@ -218,7 +218,42 @@ router.post('/sendSeguimiento', async (req, res) => {
   }
 });
 
-router.post('/seguimiento', (req, res) => handleSheetRequest(req, res, '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys'));
+router.post('/seguimiento', async ( req, res) => {
+  
+  try {
+    // console.log(jwtClient);
+    const sheets = google.sheets({ version: 'v4',  auth: jwtClient });
+      const spreadsheetId = '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys';
+      let range;
+      switch (req.body.sheetName) {
+        case 'Programas_pm':
+          range = 'PROGRAMAS_PM!A1:I1000';
+          break;
+        case 'Escuela_om':
+          range = 'ESCUELAS!A1:AB1000';
+          break;
+        default:
+          return res.status(400).json({ error: 'Nombre de hoja no válido' });
+      }
+
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+        key : process.env.key,
+    });
+    console.log(sheetValuesToObject(response.data.values));   
+    res.json({
+      status: true, 
+      data: sheetValuesToObject(response.data.values)
+    }) 
+  } catch (error) {
+    console.log('error', error); 
+    res.json({
+      status: false
+    })
+  }
+    
+});
 
 router.post('/updateSeguimiento', async (req, res) => {
   try {

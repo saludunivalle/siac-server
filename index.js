@@ -140,7 +140,52 @@ router.post('/sendDocServ', async (req, res) => {
   }
 });
 
-router.post('/docServ', (req, res) => handleSheetRequest(req, res, '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y'));
+router.post('/docServ', async ( req, res) => {
+  
+  try {
+    // console.log(jwtClient);
+    const sheets = google.sheets({ version: 'v4',  auth: jwtClient });
+      const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+      //const range = 'PROGRAMAS';
+      let range;
+      switch (req.body.sheetName) {
+        case 'Asig_X_Prog':
+          range = 'ASIG_X_PROG!A1:E1000';
+          break;
+        case 'Esc_Practica':
+          range = 'ESC_PRACTICA!A1:D1000';
+          break;
+        case 'Rel_Esc_Practica':
+          range = 'REL_ESC_PRACTICA!A1:G1000';
+          break;
+        case 'Horario':
+          range = 'HORARIOS_PRACT!A1:B1000';
+          break;
+        case 'firmas':
+          range = 'FIRMAS!A1:G1000';
+          break;
+        default:
+          return res.status(400).json({ error: 'Nombre de hoja no válido' });
+      }
+
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+        key : process.env.key,
+    });
+    console.log(sheetValuesToObject(response.data.values));   
+    res.json({
+      status: true, 
+      data: sheetValuesToObject(response.data.values)
+    }) 
+  } catch (error) {
+    console.log('error', error); 
+    res.json({
+      status: false
+    })
+  }
+    
+});
 
 router.post('/sendSeguimiento', async (req, res) => {
   try {

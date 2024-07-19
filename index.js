@@ -8,6 +8,7 @@ const multer = require('multer');
 const fs = require('fs');
 const { sheetValuesToObject } = require('./utils');
 const { config } = require('dotenv');
+const cookieParser = require('cookie-parser'); // Importa el paquete cookie-parser
 config();
 
 const app = express();
@@ -31,6 +32,17 @@ jwtClient.authorize((err) => {
 
 app.use(bodyParser.json());
 app.use(cors());
+app.use(cookieParser()); // Usa cookie-parser
+
+// Middleware para establecer cookies SameSite y secure
+app.use((req, res, next) => {
+  res.cookie('exampleCookie', 'cookieValue', {
+    sameSite: 'None', // Configura SameSite a 'None', 'Lax' o 'Strict' según sea necesario
+    secure: true, // Asegúrate de que el flag secure esté habilitado si SameSite es 'None'
+    httpOnly: true // Solo accesible desde el servidor
+  });
+  next();
+});
 
 const getSheetRange = (sheetName) => {
   const ranges = {
@@ -143,35 +155,33 @@ router.post('/sendDocServ', async (req, res) => {
 router.post('/docServ', async ( req, res) => {
   
   try {
-    // console.log(jwtClient);
     const sheets = google.sheets({ version: 'v4',  auth: jwtClient });
-      const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
-      //const range = 'PROGRAMAS';
-      let range;
-      switch (req.body.sheetName) {
-        case 'Asig_X_Prog':
-          range = 'ASIG_X_PROG!A1:E1000';
-          break;
-        case 'Esc_Practica':
-          range = 'ESC_PRACTICA!A1:D1000';
-          break;
-        case 'Rel_Esc_Practica':
-          range = 'REL_ESC_PRACTICA!A1:G1000';
-          break;
-        case 'Horario':
-          range = 'HORARIOS_PRACT!A1:B1000';
-          break;
-        case 'firmas':
-          range = 'FIRMAS!A1:G1000';
-          break;
-        default:
-          return res.status(400).json({ error: 'Nombre de hoja no válido' });
-      }
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+    let range;
+    switch (req.body.sheetName) {
+      case 'Asig_X_Prog':
+        range = 'ASIG_X_PROG!A1:E1000';
+        break;
+      case 'Esc_Practica':
+        range = 'ESC_PRACTICA!A1:D1000';
+        break;
+      case 'Rel_Esc_Practica':
+        range = 'REL_ESC_PRACTICA!A1:G1000';
+        break;
+      case 'Horario':
+        range = 'HORARIOS_PRACT!A1:B1000';
+        break;
+      case 'firmas':
+        range = 'FIRMAS!A1:G1000';
+        break;
+      default:
+        return res.status(400).json({ error: 'Nombre de hoja no válido' });
+    }
 
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range,
-        key : process.env.key,
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key : process.env.key,
     });
     console.log(sheetValuesToObject(response.data.values));   
     res.json({
@@ -221,25 +231,24 @@ router.post('/sendSeguimiento', async (req, res) => {
 router.post('/seguimiento', async ( req, res) => {
   
   try {
-    // console.log(jwtClient);
     const sheets = google.sheets({ version: 'v4',  auth: jwtClient });
-      const spreadsheetId = '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys';
-      let range;
-      switch (req.body.sheetName) {
-        case 'Programas_pm':
-          range = 'PROGRAMAS_PM!A1:I1000';
-          break;
-        case 'Escuela_om':
-          range = 'ESCUELAS!A1:AB1000';
-          break;
-        default:
-          return res.status(400).json({ error: 'Nombre de hoja no válido' });
-      }
+    const spreadsheetId = '1BgbiYkp78ylBiiEgjAqPmBze5-aj-GQ081_tFaKw7ys';
+    let range;
+    switch (req.body.sheetName) {
+      case 'Programas_pm':
+        range = 'PROGRAMAS_PM!A1:I1000';
+        break;
+      case 'Escuela_om':
+        range = 'ESCUELAS!A1:AB1000';
+        break;
+      default:
+        return res.status(400).json({ error: 'Nombre de hoja no válido' });
+    }
 
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId,
-        range,
-        key : process.env.key,
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key : process.env.key,
     });
     console.log(sheetValuesToObject(response.data.values));   
     res.json({

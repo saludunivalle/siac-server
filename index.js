@@ -8,7 +8,7 @@ const multer = require('multer');
 const fs = require('fs');
 const { sheetValuesToObject } = require('./utils');
 const { config } = require('dotenv');
-const cookieParser = require('cookie-parser'); // Importa el paquete cookie-parser
+const cookieParser = require('cookie-parser'); 
 config();
 
 const app = express();
@@ -32,21 +32,21 @@ jwtClient.authorize((err) => {
 
 app.use(bodyParser.json());
 app.use(cors());
-app.use(cookieParser()); // Usa cookie-parser
+app.use(cookieParser());
 
 // Middleware para establecer cookies SameSite y secure
 app.use((req, res, next) => {
   res.cookie('exampleCookie', 'cookieValue', {
-    sameSite: 'None', // Configura SameSite a 'None', 'Lax' o 'Strict' según sea necesario
-    secure: true, // Asegúrate de que el flag secure esté habilitado si SameSite es 'None'
-    httpOnly: true // Solo accesible desde el servidor
+    sameSite: 'None', 
+    secure: true, 
+    httpOnly: true 
   });
   next();
 });
 
 const getSheetRange = (sheetName) => {
   const ranges = {
-    'Programas': 'PROGRAMAS!A1:AH105',
+    'Programas': 'PROGRAMAS!A1:AG1000',
     'Seguimientos': 'SEGUIMIENTOS!A1:H1000',
     'Permisos': 'PERMISOS!A1:C20',
     'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E1000',

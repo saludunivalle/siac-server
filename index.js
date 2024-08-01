@@ -55,7 +55,8 @@ const getSheetRange = (sheetName) => {
     'Proc_Fases_Doc': 'PROC_FASES!I1:K1000',
     'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
     'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
-    'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000'
+    'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',
+    'HISTORICO': 'HISTORICO!A1:G1000'
   };
   return ranges[sheetName];
 };

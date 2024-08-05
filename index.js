@@ -394,6 +394,73 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
+//Para editar los detalles de los programas 
+app.post('/updateData', async (req, res) => {
+  try {
+    const { id, Sede, Facultad, Escuela, Departamento, Sección, 'Nivel de Formación': NivelFormacion, 'Titulo a Conceder': Titulo, Jornada, Modalidad, Créditos, Periodicidad, Duración, 'Fecha RRC': FechaRRC, 'Fecha RAAC': FechaRAAC } = req.body;
+    if (!id) {
+      return res.status(400).json({ error: 'ID faltante', status: false });
+    }
+
+    const spreadsheetId = '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE';
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const range = 'PROGRAMAS!A1:AE1000';  
+    const response = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const rows = response.data.values;
+
+    const rowIndex = rows.findIndex(row => row[29] == id); 
+    if (rowIndex === -1) {
+      return res.status(404).json({ error: 'ID no encontrado', status: false });
+    }
+
+    const updatedRow = [
+      rows[rowIndex][0], // Programa Académico
+      rows[rowIndex][1], // Snies
+      Sede,
+      Facultad,
+      Escuela,
+      Departamento,
+      Sección,
+      NivelFormacion, //posgrado/pregrado
+      rows[rowIndex][8], // nivel de formacion
+      Titulo,
+      Jornada,
+      Modalidad,
+      Créditos,
+      Periodicidad,
+      Duración,
+      rows[rowIndex][15], // Cupos
+      rows[rowIndex][16], // Acreditable
+      rows[rowIndex][17], // Estado
+      rows[rowIndex][18], // Tipo de Creación
+      rows[rowIndex][19], // RC Vigente
+      rows[rowIndex][20], // FechaExpedRC
+      rows[rowIndex][21], // DuracionRC
+      FechaRRC,
+      rows[rowIndex][23], // Fase RRC
+      rows[rowIndex][24], // AC Vigente
+      rows[rowIndex][25], // FechaExpedAC
+      rows[rowIndex][26], // DuracionAC
+      FechaRAAC,
+      rows[rowIndex][28], // FASE RAC
+      id  
+    ];
+
+    const updateRange = `PROGRAMAS!A${rowIndex + 1}:AE${rowIndex + 1}`;
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updateRange,
+      valueInputOption: 'RAW',
+      resource: { values: [updatedRow] },
+    });
+
+    res.status(200).json({ success: 'Datos actualizados correctamente', status: true });
+  } catch (error) {
+    console.error('Error al actualizar datos:', error);
+    res.status(500).json({ error: 'Error al actualizar datos', details: error.message, status: false });
+  }
+});
+
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(cors());

@@ -46,7 +46,7 @@ app.use((req, res, next) => {
 
 const getSheetRange = (sheetName) => {
   const ranges = {
-    'Programas': 'PROGRAMAS!A1:AG1000',
+    'Programas': 'PROGRAMAS!A1:AH1000',
     'Seguimientos': 'SEGUIMIENTOS!A1:H1000',
     'Permisos': 'PERMISOS!A1:C20',
     'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E1000',
@@ -397,7 +397,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 //Para editar los detalles de los programas 
 app.post('/updateData', async (req, res) => {
   try {
-    const { id, Sede, Facultad, Escuela, Departamento, Sección, 'Nivel de Formación': NivelFormacion, 'Titulo a Conceder': Titulo, Jornada, Modalidad, Créditos, Periodicidad, Duración, 'Fecha RRC': FechaRRC, 'Fecha RAAC': FechaRAAC } = req.body;
+    const { id, Sede, Facultad, Escuela, Departamento, Sección, 'Nivel de Formación': NivelFormacion, 'Titulo a Conceder': Titulo, Jornada, Modalidad, Créditos, Periodicidad, Duración, 'Fecha RRC': FechaRRC, 'Fecha RAAC': FechaRAAC, Acreditable, Contingencia} = req.body;
     if (!id) {
       return res.status(400).json({ error: 'ID faltante', status: false });
     }
@@ -430,7 +430,7 @@ app.post('/updateData', async (req, res) => {
       Periodicidad,
       Duración,
       rows[rowIndex][15], // Cupos
-      rows[rowIndex][16], // Acreditable
+      Acreditable, // Acreditable
       rows[rowIndex][17], // Estado
       rows[rowIndex][18], // Tipo de Creación
       rows[rowIndex][19], // RC Vigente
@@ -443,10 +443,14 @@ app.post('/updateData', async (req, res) => {
       rows[rowIndex][26], // DuracionAC
       FechaRAAC,
       rows[rowIndex][28], // FASE RAC
-      id  
+      id,
+      rows[rowIndex][30], // AAC_1A
+      rows[rowIndex][31], // MOD
+      rows[rowIndex][32], // MOD_SUS
+      Contingencia, 
     ];
 
-    const updateRange = `PROGRAMAS!A${rowIndex + 1}:AE${rowIndex + 1}`;
+    const updateRange = `PROGRAMAS!A${rowIndex + 1}:AH${rowIndex + 1}`;
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updateRange,

@@ -237,7 +237,7 @@ router.post('/seguimiento', async ( req, res) => {
     let range;
     switch (req.body.sheetName) {
       case 'Programas_pm':
-        range = 'PROGRAMAS_PM!A1:I1000';
+        range = 'PROGRAMAS_PM!A1:L1000';
         break;
       case 'Escuela_om':
         range = 'ESCUELAS!A1:AB1000';

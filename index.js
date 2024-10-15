@@ -175,6 +175,9 @@ router.post('/docServ', async ( req, res) => {
       case 'firmas':
         range = 'FIRMAS!A1:G1000';
         break;
+      case 'anexos':
+        range = 'ANEXOS_TEC!A1:G1000';
+        break;
       default:
         return res.status(400).json({ error: 'Nombre de hoja no válido' });
     }
@@ -464,6 +467,110 @@ app.post('/updateData', async (req, res) => {
     res.status(500).json({ error: 'Error al actualizar datos', details: error.message, status: false });
   }
 });
+
+router.post('/getAnexos', async (req, res) => {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+    const range = 'ANEXOS_TEC!A1:G1000';
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+
+    res.json({
+      status: true,
+      data: sheetValuesToObject(response.data.values) // Convierte los valores de la hoja en objetos
+    });
+  } catch (error) {
+    console.log('Error en la solicitud:', error);
+    res.json({
+      status: false,
+      error: 'Error en la solicitud'
+    });
+  }
+});
+
+router.post('/updateAnexo', async (req, res) => {
+  try {
+    const { updateData, id } = req.body;
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+    const range = 'ANEXOS_TEC!A1:G1000';
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
+
+    // Encontrar la fila con el ID especificado
+    const rowIndex = currentValues.findIndex(row => row[0] == id);
+    if (rowIndex === -1) {
+      return res.status(404).json({ error: 'ID no encontrado', status: false });
+    }
+
+    const updatedRange = `ANEXOS_TEC!A${rowIndex + 1}:G${rowIndex + 1}`;
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: 'RAW',
+      resource: { values: [updateData] },
+      key: process.env.key,
+    });
+
+    if (sheetsResponse.status === 200) {
+      return res.status(200).json({ success: 'Se actualizó correctamente', status: true });
+    } else {
+      return res.status(400).json({ error: 'No se actualizó', status: false });
+    }
+  } catch (error) {
+    console.error('Error en la conexión:', error);
+    return res.status(400).json({ error: 'Error en la conexión', status: false });
+  }
+});
+
+router.post('/deleteAnexo', async (req, res) => {
+  try {
+    const { id } = req.body;
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+    const range = 'ANEXOS_TEC!A1:G1000';
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
+
+    // Encontrar la fila con el ID especificado
+    const rowIndex = currentValues.findIndex(row => row[0] == id);
+    if (rowIndex === -1) {
+      return res.status(404).json({ error: 'ID no encontrado', status: false });
+    }
+
+    // Eliminar la fila (reemplazarla con una fila vacía)
+    currentValues.splice(rowIndex, 1);
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `ANEXOS_TEC!A${rowIndex + 1}:G${rowIndex + 1}`,
+      valueInputOption: 'RAW',
+      resource: { values: [['']] }, // Reemplazar la fila con una fila vacía
+      key: process.env.key,
+    });
+
+    res.status(200).json({ success: 'Se eliminó correctamente', status: true });
+  } catch (error) {
+    console.error('Error en la conexión:', error);
+    res.status(400).json({ error: 'Error en la conexión', status: false });
+  }
+});
+  
 
 app.use(express.json());
 app.use(bodyParser.json());

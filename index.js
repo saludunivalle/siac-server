@@ -535,39 +535,44 @@ router.post('/updateAnexo', async (req, res) => {
 
 router.post('/deleteAnexo', async (req, res) => {
   try {
-    const { id } = req.body;
-    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
-    const range = 'ANEXOS_TEC!A1:G1000';
-    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+      const { id } = req.body;
+      
+      if (!id) {
+          return res.status(400).json({ error: 'ID faltante' });  // Verifica si el ID está presente en el request
+      }
+      
+      const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+      const range = 'ANEXOS_TEC!A1:G1000';
+      const sheets = google.sheets({ version: 'v4', auth: jwtClient });
 
-    const responseSheet = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range,
-      key: process.env.key,
-    });
-    const currentValues = responseSheet.data.values;
+      const responseSheet = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range,
+          key: process.env.key,
+      });
 
-    // Encontrar la fila con el ID especificado
-    const rowIndex = currentValues.findIndex(row => row[0] == id);
-    if (rowIndex === -1) {
-      return res.status(404).json({ error: 'ID no encontrado', status: false });
-    }
+      const currentValues = responseSheet.data.values;
+      const rowIndex = currentValues.findIndex(row => row[0] == id);
 
-    // Eliminar la fila (reemplazarla con una fila vacía)
-    currentValues.splice(rowIndex, 1);
+      if (rowIndex === -1) {
+          return res.status(404).json({ error: 'ID no encontrado', status: false });
+      }
 
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: `ANEXOS_TEC!A${rowIndex + 1}:G${rowIndex + 1}`,
-      valueInputOption: 'RAW',
-      resource: { values: [['']] }, // Reemplazar la fila con una fila vacía
-      key: process.env.key,
-    });
+      const emptyRow = ['', '', '', '', '', '', ''];
+      const updateRange = `ANEXOS_TEC!A${rowIndex + 1}:G${rowIndex + 1}`;
 
-    res.status(200).json({ success: 'Se eliminó correctamente', status: true });
+      await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: updateRange,
+          valueInputOption: 'RAW',
+          resource: { values: [emptyRow] },
+          key: process.env.key,
+      });
+
+      res.status(200).json({ success: 'Anexo eliminado correctamente', status: true });
   } catch (error) {
-    console.error('Error en la conexión:', error);
-    res.status(400).json({ error: 'Error en la conexión', status: false });
+      console.error('Error en la eliminación:', error);
+      res.status(400).json({ error: 'Error en la eliminación', status: false });
   }
 });
 
@@ -656,37 +661,72 @@ router.post('/deletePractice', async (req, res) => {
   try {
     const { id, sheetName } = req.body;
     const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
-    const range = `${sheetName}!A1:I1000`; // Asegúrate de tener el rango correcto
+    const range = `${sheetName}!A1:I1000`; // Rango de la hoja donde buscar
     const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+
+    console.log("Intentando eliminar el ID:", id);
 
     const responseSheet = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range,
       key: process.env.key,
     });
+
     const currentValues = responseSheet.data.values;
 
-    // Encontrar la fila correspondiente al ID
+    // Buscar el índice de la fila por el ID
     const rowIndex = currentValues.findIndex(row => row[0] == id);
     if (rowIndex === -1) {
+      console.error('ID no encontrado:', id);
       return res.status(404).json({ error: 'ID no encontrado', status: false });
     }
 
-    // Eliminar la fila (reemplazar con una fila vacía)
-    currentValues.splice(rowIndex, 1);
-
-    await sheets.spreadsheets.values.update({
+    // Actualizar la fila con valores vacíos (efecto de eliminación)
+    const updatedRange = `${sheetName}!A${rowIndex + 1}:I${rowIndex + 1}`;
+    const updateResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `${sheetName}!A${rowIndex + 1}:I${rowIndex + 1}`,
+      range: updatedRange,
       valueInputOption: 'RAW',
-      resource: { values: [['']] }, // Reemplazar con una fila vacía
+      resource: { values: [['']] }, // Rellenar la fila con valores vacíos
       key: process.env.key,
     });
 
-    res.status(200).json({ success: 'Solicitud eliminada correctamente', status: true });
+    if (updateResponse.status === 200) {
+      console.log('Fila eliminada (rellenada con valores vacíos) correctamente');
+      res.status(200).json({ success: 'Solicitud eliminada correctamente', status: true });
+    } else {
+      console.error('Error al eliminar la solicitud');
+      res.status(400).json({ error: 'Error al eliminar la solicitud', status: false });
+    }
   } catch (error) {
-    console.error('Error en la conexión:', error);
-    res.status(400).json({ error: 'Error en la conexión', status: false });
+    console.error('Error al eliminar la solicitud:', error);
+    res.status(400).json({ error: 'Error al eliminar la solicitud', status: false });
+  }
+});
+
+
+router.post('/getPractices', async (req, res) => {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y'; // ID de tu hoja
+    const range = 'SOLICITUD_PRACT!A1:I1000';  // Rango donde están almacenadas las prácticas
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+
+    res.json({
+      status: true,
+      data: sheetValuesToObject(response.data.values)  // Convierte los valores de la hoja en objetos
+    });
+  } catch (error) {
+    console.log('Error en la solicitud:', error);
+    res.json({
+      status: false,
+      error: 'Error en la solicitud'
+    });
   }
 });
 

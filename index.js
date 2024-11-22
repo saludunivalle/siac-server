@@ -48,7 +48,7 @@ const getSheetRange = (sheetName) => {
   const ranges = {
     'Programas': 'PROGRAMAS!A1:AH1000',
     'Seguimientos': 'SEGUIMIENTOS!A1:H2000',
-    'Permisos': 'PERMISOS!A1:C20',
+    'Permisos': 'PERMISOS!A1:C100',
     'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E1000',
     'Proc_Fases': 'PROC_FASES!A1:E1000',
     'Proc_X_Prog': 'PROC_X_PROG!A1:C1000',

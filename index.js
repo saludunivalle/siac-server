@@ -44,6 +44,7 @@ app.use((req, res, next) => {
   next();
 });
 
+//Función para obtener el rango de las hojas de cálculo 
 const getSheetRange = (sheetName) => {
   const ranges = {
     'Programas': 'PROGRAMAS!A1:AH1000',
@@ -61,6 +62,7 @@ const getSheetRange = (sheetName) => {
   return ranges[sheetName];
 };
 
+//Función para manejar las solicitudes de hojas de cálculo
 const handleSheetRequest = async (req, res, spreadsheetId) => {
   try {
     const { sheetName } = req.body;
@@ -89,6 +91,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
   }
 };
 
+//Función para enviar datos a las hojas de cálculo
 router.post('/sendData', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
@@ -120,8 +123,10 @@ router.post('/sendData', async (req, res) => {
   }
 });
 
+//Función para obtener datos de las hojas de cálculo
 router.post('/', (req, res) => handleSheetRequest(req, res, '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE'));
 
+//Función para enviar datos a la hoja de cálculo de Docencia y Servicio
 router.post('/sendDocServ', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
@@ -153,6 +158,7 @@ router.post('/sendDocServ', async (req, res) => {
   }
 });
 
+//Función para obtener datos de la hoja de cálculo de Docencia y Servicio
 router.post('/docServ', async ( req, res) => {
   
   try {
@@ -201,6 +207,7 @@ router.post('/docServ', async ( req, res) => {
     
 });
 
+//Función para enviar datos a la hoja de cálculo de Seguimiento PM
 router.post('/sendSeguimiento', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
@@ -232,6 +239,7 @@ router.post('/sendSeguimiento', async (req, res) => {
   }
 });
 
+//Función para obtener datos de la hoja de cálculo de Seguimiento PM
 router.post('/seguimiento', async ( req, res) => {
   
   try {
@@ -268,6 +276,7 @@ router.post('/seguimiento', async ( req, res) => {
     
 });
 
+//Función para actualizar los datos de la hoja de cálculo de Seguimiento PM
 router.post('/updateSeguimiento', async (req, res) => {
   try {
     const { updateData, id, sheetName } = req.body;
@@ -313,6 +322,7 @@ router.post('/updateSeguimiento', async (req, res) => {
   }
 });
 
+//Función para enviar los datos a la hoja de cálculo Reportes Actividades
 router.post('/sendReport', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
@@ -344,6 +354,7 @@ router.post('/sendReport', async (req, res) => {
   }
 });
 
+//Función para limpiar los datos de la hoja de cálculo Reportes Actividades
 router.post('/clearSheet', async (req, res) => {
   const { spreadsheetId, sheetName } = req.body;
   try {
@@ -362,6 +373,7 @@ router.post('/clearSheet', async (req, res) => {
 
 const upload = multer();
 
+//Función para subir archivos a Google Drive
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     const drive = google.drive({
@@ -397,7 +409,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-//Para editar los detalles de los programas 
+//Función para editar los detalles de los programas 
 app.post('/updateData', async (req, res) => {
   try {
     const { id, Sede, Facultad, Escuela, Departamento, Sección, 'Nivel de Formación': NivelFormacion, 'Titulo a Conceder': Titulo, Jornada, Modalidad, Créditos, Periodicidad, Duración, 'Fecha RRC': FechaRRC, 'Fecha RAAC': FechaRAAC, Acreditable, Contingencia} = req.body;
@@ -468,6 +480,7 @@ app.post('/updateData', async (req, res) => {
   }
 });
 
+//Función para obtener los anexos de la hoja de calculo de Docencia y Servicio
 router.post('/getAnexos', async (req, res) => {
   try {
     const sheets = google.sheets({ version: 'v4', auth: jwtClient });
@@ -493,6 +506,7 @@ router.post('/getAnexos', async (req, res) => {
   }
 });
 
+//Función para actualizar los anexos de la hoja de calculo de Docencia y Servicio
 router.post('/updateAnexo', async (req, res) => {
   try {
     const { updateData, id } = req.body;
@@ -533,6 +547,7 @@ router.post('/updateAnexo', async (req, res) => {
   }
 });
 
+//Función para eliminar los anexos de la hoja de calculo de Docencia y Servicio
 router.post('/deleteAnexo', async (req, res) => {
   try {
       const { id } = req.body;
@@ -576,7 +591,7 @@ router.post('/deleteAnexo', async (req, res) => {
   }
 });
 
-
+//Función para enviar los datos de la práctica a la hoja de cálculo de Docencia y Servicio
 router.post('/sendPractice', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
@@ -614,7 +629,7 @@ router.post('/sendPractice', async (req, res) => {
   }
 });
 
-
+//Función para actualizar los datos de la práctica de la hoja de cálculo de Docencia y Servicio
 router.post('/updatePractice', async (req, res) => {
   try {
     const { updateData, id, sheetName } = req.body;
@@ -656,7 +671,7 @@ router.post('/updatePractice', async (req, res) => {
   }
 });
 
-
+//Función para eliminar los datos de la práctica de la hoja de cálculo de Docencia y Servicio
 router.post('/deletePractice', async (req, res) => {
   try {
     const { id, sheetName } = req.body;
@@ -704,7 +719,7 @@ router.post('/deletePractice', async (req, res) => {
   }
 });
 
-
+//Función para obtener los datos de la hoja de cálculo de Docencia y Servicio
 router.post('/getPractices', async (req, res) => {
   try {
     const sheets = google.sheets({ version: 'v4', auth: jwtClient });

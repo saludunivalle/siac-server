@@ -184,6 +184,9 @@ router.post('/docServ', async ( req, res) => {
       case 'anexos':
         range = 'ANEXOS_TEC!A1:G1000';
         break;
+      case 'Programas':
+        range = 'PROGRAMAS!A1:AH1000';
+        break;
       default:
         return res.status(400).json({ error: 'Nombre de hoja no válido' });
     }

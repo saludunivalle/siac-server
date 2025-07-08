@@ -15,6 +15,12 @@ const app = express();
 const router = express.Router();
 const PORT = process.env.PORT || 3001;
 
+// Configuración de multer para almacenamiento en memoria
+const upload = multer({ storage: multer.memoryStorage() });
+
+// ID de la carpeta principal en Google Drive
+const parentFolderId = '178MjHfhOhkZCs4mOAtXdJ8EjDW08PEoC';
+
 let jwtClient = new google.auth.JWT(
   process.env.client_email,
   null,
@@ -29,6 +35,9 @@ jwtClient.authorize((err) => {
     console.log("Successfully connected to Google APIs!");
   }
 });
+
+// Inicializar el cliente de la API de Google Drive
+const drive = google.drive({ version: 'v3', auth: jwtClient });
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -377,41 +386,76 @@ router.post('/clearSheet', async (req, res) => {
   }
 });
 
-const upload = multer();
-
-//Función para subir archivos a Google Drive
+// Endpoint para subir archivos a Google Drive
 router.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    const drive = google.drive({
-      version: 'v3',
-      auth: jwtClient
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No se subió ningún archivo' });
+    }
+
+    const scenarioName = req.body.scenarioName || 'Archivos Generales';
+    
+    // 1. Buscar si la carpeta del escenario ya existe
+    const folderQuery = `mimeType='application/vnd.google-apps.folder' and name='${scenarioName}' and '${parentFolderId}' in parents and trashed=false`;
+    let folderResponse = await drive.files.list({
+        q: folderQuery,
+        fields: 'files(id, name)',
+        spaces: 'drive'
     });
 
-    const { originalname } = req.file;
+    let folderId;
+    if (folderResponse.data.files.length > 0) {
+      // La carpeta ya existe
+      folderId = folderResponse.data.files[0].id;
+    } else {
+      // La carpeta no existe, hay que crearla
+      const folderMetadata = {
+        name: scenarioName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentFolderId]
+      };
+      const newFolder = await drive.files.create({
+        resource: folderMetadata,
+        fields: 'id'
+      });
+      folderId = newFolder.data.id;
+    }
 
+    // 2. Subir el archivo a la carpeta del escenario
     const fileMetadata = {
-      name: originalname,
-      parents: ['1Y5dit9wGoK9iKsOd7W-ACjee8zlMhI7R']
+      name: req.file.originalname,
+      parents: [folderId]
     };
-
-    const templateBuffer = Buffer.from(req.file.buffer, 'base64');
-
     const media = {
       mimeType: req.file.mimetype,
-      body: new stream.PassThrough().end(templateBuffer),
+      body: stream.Readable.from(req.file.buffer)
     };
 
-    const response = await drive.files.create({
-      requestBody: fileMetadata,
-      media: media
+    const uploadedFile = await drive.files.create({
+      resource: fileMetadata,
+      media: media,
+      fields: 'id, webViewLink'
     });
 
-    console.log('Archivo subido correctamente a Google Drive:', response.data);
+    // 3. Hacer el archivo públicamente visible (opcional pero recomendado para URLs)
+    await drive.permissions.create({
+      fileId: uploadedFile.data.id,
+      resource: {
+        role: 'reader',
+        type: 'anyone'
+      }
+    });
 
-    res.json({ success: true, message: 'Archivo subido correctamente a Google Drive', enlace: `https://drive.google.com/file/d/${response.data.id}/view` });
+    // 4. Devolver la URL del archivo
+    res.json({
+      success: true,
+      message: 'Archivo subido correctamente a Google Drive',
+      fileUrl: uploadedFile.data.webViewLink
+    });
+
   } catch (error) {
-    console.log(error);
-    return res.status(400).json({ error: error, status: false });
+    console.error('Error al subir el archivo a Google Drive:', error);
+    res.status(500).json({ success: false, message: 'Error interno al subir el archivo' });
   }
 });
 
@@ -751,11 +795,115 @@ router.post('/getPractices', async (req, res) => {
   }
 });
 
+//Función para obtener los escenarios de práctica de la hoja ESC_PRACTICA
+router.post('/getInstituciones', async (req, res) => {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+    const range = 'ESC_PRACTICA!A1:F1000'; // Columnas A (id), B (nombre), C (tipología), D (código), E (fecha_inicio), F (fecha_fin)
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+
+    // Debug: mostrar qué datos están llegando de la hoja
+    console.log('=== DEBUG ESC_PRACTICA BACKEND ===');
+    console.log('Headers raw (primera fila):', response.data.values[0]);
+    console.log('Segunda fila ejemplo:', response.data.values[1]);
+    console.log('Headers normalizados:', response.data.values[0]?.map(h => h.toLowerCase().trim()));
+    
+    const processedData = sheetValuesToObject(response.data.values);
+    console.log('Primer objeto procesado:', processedData[0]);
+    console.log('Campos disponibles:', Object.keys(processedData[0] || {}));
+    console.log('==================================');
+
+    res.json({
+      status: true,
+      data: processedData
+    });
+  } catch (error) {
+    console.log('Error al obtener escenarios de práctica:', error);
+    res.json({
+      status: false,
+      error: 'Error al obtener escenarios de práctica'
+    });
+  }
+});
+
+//Función para enviar documentos de escenario a la hoja ANEXOS_ESC
+router.post('/sendDocEscenario', async (req, res) => {
+  try {
+    const { insertData, sheetName } = req.body;
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+    const range = sheetName;
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    
+    // Obtener los datos actuales para calcular la siguiente fila disponible
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const currentValues = responseSheet.data.values;
+    const nextRow = currentValues ? currentValues.length + 1 : 1;
+    const updatedRange = `${range}!A${nextRow}`;
+    
+    // Insertar los datos en la siguiente fila
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: 'RAW',
+      resource: { values: insertData },
+      key: process.env.key,
+    });
+
+    if (sheetsResponse.status === 200) {
+      console.log('Documento de escenario guardado correctamente');
+      return res.status(200).json({ success: 'Documento de escenario guardado correctamente', status: true });
+    } else {
+      return res.status(400).json({ error: 'Error al guardar el documento de escenario', status: false });
+    }
+  } catch (error) {
+    console.error('Error al enviar documento de escenario:', error);
+    return res.status(400).json({ error: 'Error al enviar documento de escenario', status: false });
+  }
+});
+
+//Función para obtener los documentos de escenario de la hoja ANEXOS_ESC
+router.post('/getDocEscenarios', async (req, res) => {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+    const range = 'ANEXOS_ESC!A1:I1000'; // Columnas A-I (id, id_programa, id_escenario, institucion, url, tipologia, codigo, fecha_inicio, fecha_fin)
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+
+    res.json({
+      status: true,
+      data: sheetValuesToObject(response.data.values)
+    });
+  } catch (error) {
+    console.log('Error al obtener documentos de escenario:', error);
+    res.json({
+      status: false,
+      error: 'Error al obtener documentos de escenario'
+    });
+  }
+});
 
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(cors());
 app.use(router);
+
+// Servir archivos estáticos desde la carpeta 'uploads'
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.listen(PORT, () => {
   console.log(`Servidor backend escuchando en el puerto ${PORT}`);

@@ -167,13 +167,78 @@ router.post('/sendDocServ', async (req, res) => {
   }
 });
 
+// Health check endpoint
+router.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    googleAuth: !!jwtClient,
+    apiKey: !!process.env.key,
+    spreadsheetId: '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y'
+  });
+});
+
+// Test Google Sheets connection endpoint
+router.get('/test-sheets', async (req, res) => {
+  try {
+    if (!process.env.key) {
+      return res.status(500).json({ 
+        status: false, 
+        error: 'API key de Google Sheets no configurada' 
+      });
+    }
+
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
+    
+    // Intentar acceder a una hoja simple para probar la conexión
+    const response = await sheets.spreadsheets.get({
+      spreadsheetId,
+      key: process.env.key,
+    });
+
+    res.json({
+      status: true,
+      message: 'Conexión a Google Sheets exitosa',
+      spreadsheetTitle: response.data.properties.title,
+      sheets: response.data.sheets.map(s => s.properties.title)
+    });
+  } catch (error) {
+    console.error('Error en test-sheets:', error);
+    res.status(500).json({
+      status: false,
+      error: error.message,
+      code: error.code || 'UNKNOWN'
+    });
+  }
+});
+
 //Función para obtener datos de la hoja de cálculo de Docencia y Servicio
 router.post('/docServ', async ( req, res) => {
   
   try {
+    // Validar que se proporcione el nombre de la hoja
+    if (!req.body.sheetName) {
+      console.log('Error: No se proporcionó sheetName en la solicitud');
+      return res.status(400).json({ 
+        status: false, 
+        error: 'Nombre de hoja no proporcionado' 
+      });
+    }
+
+    // Validar que la API key esté disponible
+    if (!process.env.key) {
+      console.log('Error: API key de Google Sheets no configurada');
+      return res.status(500).json({ 
+        status: false, 
+        error: 'API key de Google Sheets no configurada' 
+      });
+    }
+
     const sheets = google.sheets({ version: 'v4',  auth: jwtClient });
     const spreadsheetId = '1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y';
     let range;
+    
     switch (req.body.sheetName) {
       case 'Asig_X_Prog':
         range = 'ASIG_X_PROG!A1:E1000';
@@ -197,24 +262,62 @@ router.post('/docServ', async ( req, res) => {
         range = 'PROGRAMAS!A1:AH1000';
         break;
       default:
-        return res.status(400).json({ error: 'Nombre de hoja no válido' });
+        console.log(`Error: Nombre de hoja no válido: ${req.body.sheetName}`);
+        return res.status(400).json({ 
+          status: false, 
+          error: `Nombre de hoja no válido: ${req.body.sheetName}` 
+        });
     }
+
+    console.log(`Intentando acceder a: ${spreadsheetId}, rango: ${range}`);
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range,
       key : process.env.key,
     });
-    console.log(sheetValuesToObject(response.data.values));   
+
+    if (!response.data || !response.data.values) {
+      console.log('Error: No se recibieron datos de Google Sheets');
+      return res.status(500).json({ 
+        status: false, 
+        error: 'No se recibieron datos de Google Sheets' 
+      });
+    }
+
+    const processedData = sheetValuesToObject(response.data.values);
+    console.log(`Datos procesados para ${req.body.sheetName}:`, processedData.length, 'registros');
+    
     res.json({
       status: true, 
-      data: sheetValuesToObject(response.data.values)
+      data: processedData
     }) 
   } catch (error) {
-    console.log('error', error); 
-    res.json({
-      status: false
-    })
+    console.log('Error en docServ:', error.message || error); 
+    
+    // Proporcionar información más detallada del error
+    let errorMessage = 'Error desconocido';
+    let errorDetails = '';
+    
+    if (error.code === 403) {
+      errorMessage = 'Error de permisos - Verificar API key y permisos de Google Sheets';
+      errorDetails = error.message;
+    } else if (error.code === 404) {
+      errorMessage = 'Spreadsheet no encontrado - Verificar ID de la hoja';
+      errorDetails = error.message;
+    } else if (error.code === 429) {
+      errorMessage = 'Cuota de API excedida - Esperar antes de hacer más solicitudes';
+      errorDetails = error.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    res.status(500).json({
+      status: false,
+      error: errorMessage,
+      details: errorDetails,
+      code: error.code || 'UNKNOWN'
+    });
   }
     
 });

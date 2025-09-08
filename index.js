@@ -66,7 +66,8 @@ const getSheetRange = (sheetName) => {
     'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
     'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
     'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',
-    'HISTORICO': 'HISTORICO!A1:G1000'
+    'HISTORICO': 'HISTORICO!A1:G1000',
+    'ESTADISTICAS': 'ESTADISTICAS!A1:Q2000'
   };
   return ranges[sheetName];
 };
@@ -77,8 +78,24 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
     const { sheetName } = req.body;
     const range = getSheetRange(sheetName);
 
+    console.log(`Solicitud para hoja: ${sheetName}, Range: ${range}`);
+
     if (!range) {
-      return res.status(400).json({ error: 'Nombre de hoja no válido' });
+      console.log('Hojas disponibles:', Object.keys({
+        'Programas': 'PROGRAMAS!A1:AH1000',
+        'Seguimientos': 'SEGUIMIENTOS!A1:H2000',
+        'Permisos': 'PERMISOS!A1:C100',
+        'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E1000',
+        'Proc_Fases': 'PROC_FASES!A1:E1000',
+        'Proc_X_Prog': 'PROC_X_PROG!A1:C1000',
+        'Proc_Fases_Doc': 'PROC_FASES!I1:K1000',
+        'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
+        'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
+        'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',
+        'HISTORICO': 'HISTORICO!A1:G1000',
+        'ESTADISTICAS': 'ESTADISTICAS!A1:Q2000'
+      }));
+      return res.status(400).json({ error: `Nombre de hoja no válido: ${sheetName}` });
     }
 
     const sheets = google.sheets({ version: 'v4', auth: jwtClient });
@@ -92,10 +109,10 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
       data: sheetValuesToObject(response.data.values)
     });
   } catch (error) {
-    console.log('Error en la solicitud:', error);
+    console.log(`Error en la solicitud para ${req.body.sheetName}:`, error);
     res.json({
       status: false,
-      error: 'Error en la solicitud'
+      error: `Error en la solicitud para ${req.body.sheetName}: ${error.message}`
     });
   }
 };
@@ -132,7 +149,7 @@ router.post('/sendData', async (req, res) => {
   }
 });
 
-//Función para obtener datos de las hojas de cálculo
+//Función para obtener datos de las hojas de cálculo principales
 router.post('/', (req, res) => handleSheetRequest(req, res, '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE'));
 
 //Función para enviar datos a la hoja de cálculo de Docencia y Servicio

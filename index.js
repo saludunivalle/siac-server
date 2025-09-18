@@ -66,7 +66,7 @@ const getSheetRange = (sheetName) => {
     'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
     'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
     'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',
-    'HISTORICO': 'HISTORICO!A1:G1000',
+    'HISTORICO': 'HISTORICO!A1:K1000',
     'ESTADISTICAS': 'ESTADISTICAS!A1:Q2000'
   };
   return ranges[sheetName];
@@ -92,7 +92,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
         'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
         'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
         'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',
-        'HISTORICO': 'HISTORICO!A1:G1000',
+        'HISTORICO': 'HISTORICO!A1:K1000',
         'ESTADISTICAS': 'ESTADISTICAS!A1:Q2000'
       }));
       return res.status(400).json({ error: `Nombre de hoja no válido: ${sheetName}` });

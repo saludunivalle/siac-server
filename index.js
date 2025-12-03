@@ -56,18 +56,18 @@ app.use((req, res, next) => {
 //Función para obtener el rango de las hojas de cálculo 
 const getSheetRange = (sheetName) => {
   const ranges = {
-    'Programas': 'PROGRAMAS!A1:AH1000',
-    'Seguimientos': 'SEGUIMIENTOS!A1:H2000',
-    'Permisos': 'PERMISOS!A1:C100',
-    'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E1000',
+    'Programas': 'PROGRAMAS!A1:BC5000',
+    'Seguimientos': 'SEGUIMIENTOS!A1:H10000',
+    'Permisos': 'PERMISOS!A1:C1000',
+    'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E5000',
     'Proc_Fases': 'PROC_FASES!A1:E1000',
-    'Proc_X_Prog': 'PROC_X_PROG!A1:C1000',
+    'Proc_X_Prog': 'PROC_X_PROG!A1:C5000',
     'Proc_Fases_Doc': 'PROC_FASES!I1:K1000',
     'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
     'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
     'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',
-    'HISTORICO': 'HISTORICO!A1:K1000',
-    'ESTADISTICAS': 'ESTADISTICAS!A1:Q2000'
+    'HISTORICO': 'HISTORICO!A1:K5000',
+    'ESTADISTICAS': 'ESTADISTICAS!A1:Q5000'
   };
   return ranges[sheetName];
 };
@@ -78,22 +78,23 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
     const { sheetName } = req.body;
     const range = getSheetRange(sheetName);
 
-    console.log(`Solicitud para hoja: ${sheetName}, Range: ${range}`);
+    console.log(`🌐 Solicitud para hoja: ${sheetName}, Range: ${range}`);
+    console.log(`📅 Timestamp de la solicitud: ${new Date().toISOString()}`);
 
     if (!range) {
       console.log('Hojas disponibles:', Object.keys({
-        'Programas': 'PROGRAMAS!A1:AH1000',
-        'Seguimientos': 'SEGUIMIENTOS!A1:H2000',
-        'Permisos': 'PERMISOS!A1:C100',
-        'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E1000',
+        'Programas': 'PROGRAMAS!A1:BC5000',
+        'Seguimientos': 'SEGUIMIENTOS!A1:H10000',
+        'Permisos': 'PERMISOS!A1:C1000',
+        'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E5000',
         'Proc_Fases': 'PROC_FASES!A1:E1000',
-        'Proc_X_Prog': 'PROC_X_PROG!A1:C1000',
+        'Proc_X_Prog': 'PROC_X_PROG!A1:C5000',
         'Proc_Fases_Doc': 'PROC_FASES!I1:K1000',
         'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
         'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
         'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',
-        'HISTORICO': 'HISTORICO!A1:K1000',
-        'ESTADISTICAS': 'ESTADISTICAS!A1:Q2000'
+        'HISTORICO': 'HISTORICO!A1:K5000',
+        'ESTADISTICAS': 'ESTADISTICAS!A1:Q5000'
       }));
       return res.status(400).json({ error: `Nombre de hoja no válido: ${sheetName}` });
     }
@@ -104,9 +105,21 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
       range,
       key: process.env.key,
     });
+    
+    const rawValues = response.data.values;
+    const processedData = sheetValuesToObject(rawValues);
+    
+    console.log(`📊 Datos extraídos de ${sheetName}:`);
+    console.log(`  - Filas totales: ${rawValues ? rawValues.length : 0}`);
+    console.log(`  - Objetos procesados: ${processedData ? processedData.length : 0}`);
+    if (rawValues && rawValues.length > 0) {
+      console.log(`  - Columnas: ${rawValues[0] ? rawValues[0].length : 0}`);
+      console.log(`  - Headers: ${JSON.stringify(rawValues[0]?.slice(0, 10))}...`);
+    }
+    
     res.json({
       status: true,
-      data: sheetValuesToObject(response.data.values)
+      data: processedData
     });
   } catch (error) {
     console.log(`Error en la solicitud para ${req.body.sheetName}:`, error);
@@ -121,6 +134,11 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
 router.post('/sendData', async (req, res) => {
   try {
     const { insertData, sheetName } = req.body;
+    console.log('=== /sendData - Guardando datos ===');
+    console.log('📋 Hoja destino:', sheetName);
+    console.log('📝 Datos a insertar:', JSON.stringify(insertData));
+    console.log('📅 Timestamp:', new Date().toISOString());
+    
     const spreadsheetId = '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE';
     const range = sheetName;
     const sheets = google.sheets({ version: 'v4', auth: jwtClient });
@@ -132,6 +150,11 @@ router.post('/sendData', async (req, res) => {
     const currentValues = responseSheet.data.values;
     const nextRow = currentValues ? currentValues.length + 1 : 1;
     const updatedRange = `${range}!A${nextRow}`;
+    
+    console.log('📍 Fila actual:', currentValues ? currentValues.length : 0);
+    console.log('📍 Siguiente fila:', nextRow);
+    console.log('📍 Rango de actualización:', updatedRange);
+    
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,
@@ -139,18 +162,144 @@ router.post('/sendData', async (req, res) => {
       resource: { values: insertData },
       key: process.env.key,
     });
+    
     if (sheetsResponse.status === 200) {
-      return res.status(200).json({ success: 'Se insertó correctamente', status: true });
+      console.log('✅ Datos insertados correctamente en la fila', nextRow);
+      return res.status(200).json({ success: 'Se insertó correctamente', status: true, row: nextRow });
     } else {
+      console.log('❌ Error al insertar datos:', sheetsResponse);
       return res.status(400).json({ error: 'No se insertó', status: false });
     }
   } catch (error) {
-    return res.status(400).json({ error: 'Error en la conexión', status: false });
+    console.error('❌ Error en /sendData:', error);
+    return res.status(400).json({ error: 'Error en la conexión', status: false, details: error.message });
   }
 });
 
 //Función para obtener datos de las hojas de cálculo principales
 router.post('/', (req, res) => handleSheetRequest(req, res, '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE'));
+
+//Función para actualizar una fila de seguimiento
+router.post('/updateSeguimientoRow', async (req, res) => {
+  try {
+    const { searchData, updateData } = req.body;
+    console.log('=== /updateSeguimientoRow ===');
+    console.log('Buscando:', searchData);
+    console.log('Actualizando a:', updateData);
+    
+    const spreadsheetId = '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE';
+    const range = 'SEGUIMIENTOS!A1:H10000';
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    
+    const currentValues = responseSheet.data.values;
+    if (!currentValues || currentValues.length === 0) {
+      return res.status(404).json({ error: 'No se encontraron datos', status: false });
+    }
+    
+    // Buscar la fila que coincida con los criterios
+    // Columnas: A=id_programa, B=timestamp, C=mensaje, D=riesgo, E=usuario, F=topic, G=url_adjunto, H=fase
+    const rowIndex = currentValues.findIndex((row, index) => {
+      if (index === 0) return false; // Saltar encabezado
+      return row[0] === searchData.id_programa &&
+             row[1] === searchData.timestamp &&
+             row[4] === searchData.usuario &&
+             row[5] === searchData.topic;
+    });
+    
+    if (rowIndex === -1) {
+      console.log('❌ No se encontró la fila');
+      return res.status(404).json({ error: 'Seguimiento no encontrado', status: false });
+    }
+    
+    console.log('📍 Fila encontrada:', rowIndex + 1);
+    
+    const updatedRange = `SEGUIMIENTOS!A${rowIndex + 1}:H${rowIndex + 1}`;
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: 'RAW',
+      resource: { values: [updateData] },
+      key: process.env.key,
+    });
+    
+    if (sheetsResponse.status === 200) {
+      console.log('✅ Seguimiento actualizado correctamente');
+      return res.status(200).json({ success: 'Seguimiento actualizado', status: true });
+    } else {
+      return res.status(400).json({ error: 'No se actualizó', status: false });
+    }
+  } catch (error) {
+    console.error('❌ Error en /updateSeguimientoRow:', error);
+    return res.status(400).json({ error: 'Error en la conexión', status: false, details: error.message });
+  }
+});
+
+//Función para eliminar una fila de seguimiento
+router.post('/deleteSeguimientoRow', async (req, res) => {
+  try {
+    const { searchData } = req.body;
+    console.log('=== /deleteSeguimientoRow ===');
+    console.log('Buscando para eliminar:', searchData);
+    
+    const spreadsheetId = '1GQY2sWovU3pIBk3NyswSIl_bkCi86xIwCjbMqK_wIAE';
+    const range = 'SEGUIMIENTOS!A1:H10000';
+    const sheets = google.sheets({ version: 'v4', auth: jwtClient });
+    
+    const responseSheet = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    
+    const currentValues = responseSheet.data.values;
+    if (!currentValues || currentValues.length === 0) {
+      return res.status(404).json({ error: 'No se encontraron datos', status: false });
+    }
+    
+    // Buscar la fila que coincida con los criterios
+    const rowIndex = currentValues.findIndex((row, index) => {
+      if (index === 0) return false; // Saltar encabezado
+      return row[0] === searchData.id_programa &&
+             row[1] === searchData.timestamp &&
+             row[4] === searchData.usuario &&
+             row[5] === searchData.topic;
+    });
+    
+    if (rowIndex === -1) {
+      console.log('❌ No se encontró la fila para eliminar');
+      return res.status(404).json({ error: 'Seguimiento no encontrado', status: false });
+    }
+    
+    console.log('📍 Fila a eliminar:', rowIndex + 1);
+    
+    // Limpiar la fila (poner valores vacíos)
+    const emptyRow = ['', '', '', '', '', '', '', ''];
+    const updatedRange = `SEGUIMIENTOS!A${rowIndex + 1}:H${rowIndex + 1}`;
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: 'RAW',
+      resource: { values: [emptyRow] },
+      key: process.env.key,
+    });
+    
+    if (sheetsResponse.status === 200) {
+      console.log('✅ Seguimiento eliminado correctamente');
+      return res.status(200).json({ success: 'Seguimiento eliminado', status: true });
+    } else {
+      return res.status(400).json({ error: 'No se eliminó', status: false });
+    }
+  } catch (error) {
+    console.error('❌ Error en /deleteSeguimientoRow:', error);
+    return res.status(400).json({ error: 'Error en la conexión', status: false, details: error.message });
+  }
+});
 
 //Función para enviar datos a la hoja de cálculo de Docencia y Servicio
 router.post('/sendDocServ', async (req, res) => {

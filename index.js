@@ -57,12 +57,14 @@ app.use((req, res, next) => {
 const getSheetRange = (sheetName) => {
   const ranges = {
     'Programas': 'PROGRAMAS!A1:BC5000',
-    'Seguimientos': 'SEGUIMIENTOS!A1:H10000',
+    'Seguimientos': 'SEGUIMIENTOS!A1:K10000',
     'Permisos': 'PERMISOS!A1:E1000',
     'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E5000',
     'Proc_Fases': 'PROC_FASES!A1:F1000',
+    'Proc_Fases_Sup': 'PROC_FASES!Q:S1000',
     'Proc_X_Prog': 'PROC_X_PROG!A1:C5000',
     'Proc_Fases_Doc': 'PROC_FASES!I1:L1000',
+    'Act_x_Prog_Est': 'ACT_X_PROG_ESTADOS!A1:D1000',
     'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
     'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
     'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',
@@ -84,12 +86,14 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
     if (!range) {
       console.log('Hojas disponibles:', Object.keys({
         'Programas': 'PROGRAMAS!A1:BC5000',
-        'Seguimientos': 'SEGUIMIENTOS!A1:H10000',
+        'Seguimientos': 'SEGUIMIENTOS!A1:K10000',
         'Permisos': 'PERMISOS!A1:E1000',
         'Proc_X_Doc': 'PROC_X_PROG_DOCS!A1:E5000',
         'Proc_Fases': 'PROC_FASES!A1:F1000',
+        'Proc_Fases_Sup': 'PROC_FASES!Q:S1000',
         'Proc_X_Prog': 'PROC_X_PROG!A1:C5000',
         'Proc_Fases_Doc': 'PROC_FASES!I1:L1000',
+        'Act_x_Prog_Est': 'ACT_X_PROG_ESTADOS!A1:D1000',
         'Asig_X_Prog': 'ASIG_X_PROG!A1:D1000',
         'Esc_Practica': 'ESC_PRACTICA!A1:D1000',
         'Rel_Esc_Practica': 'REL_ESC_PRACTICA!A1:E1000',

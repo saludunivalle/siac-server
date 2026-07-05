@@ -72,7 +72,7 @@ const getSheetRange = (sheetName) => {
     Esc_Practica: "ESC_PRACTICA!A1:D1000",
     Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
     HISTORICO: "HISTORICO!A1:K5000",
-    ESTADISTICAS: "ESTADISTICAS!A1:Q5000",
+    ESTADISTICAS: "ESTADISTICAS!A1:R5000",
   };
   return ranges[sheetName];
 };
@@ -103,7 +103,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           Esc_Practica: "ESC_PRACTICA!A1:D1000",
           Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
           HISTORICO: "HISTORICO!A1:K5000",
-          ESTADISTICAS: "ESTADISTICAS!A1:Q5000",
+          ESTADISTICAS: "ESTADISTICAS!A1:R5000",
         }),
       );
       return res

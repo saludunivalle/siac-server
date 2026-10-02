@@ -418,7 +418,7 @@ router.post("/docServ", async (req, res) => {
         range = "FIRMAS!A1:G1000";
         break;
       case "anexos":
-        range = "ANEXOS_TEC!A1:G1000";
+        range = "ANEXOS_TEC!A1:R1000";
         break;
       case "Programas":
         range = "PROGRAMAS!A1:AH1000";
@@ -803,7 +803,7 @@ router.post("/getAnexos", async (req, res) => {
   try {
     const sheets = google.sheets({ version: "v4", auth: jwtClient });
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
-    const range = "ANEXOS_TEC!A1:M1000";
+    const range = "ANEXOS_TEC!A1:R1000";
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -829,7 +829,7 @@ router.post("/updateAnexo", async (req, res) => {
   try {
     const { updateData, id } = req.body;
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
-    const range = "ANEXOS_TEC!A1:M1000";
+    const range = "ANEXOS_TEC!A1:R1000";
     const sheets = google.sheets({ version: "v4", auth: jwtClient });
 
     const responseSheet = await sheets.spreadsheets.values.get({
@@ -845,7 +845,7 @@ router.post("/updateAnexo", async (req, res) => {
       return res.status(404).json({ error: "ID no encontrado", status: false });
     }
 
-    const updatedRange = `ANEXOS_TEC!A${rowIndex + 1}:M${rowIndex + 1}`;
+    const updatedRange = `ANEXOS_TEC!A${rowIndex + 1}:R${rowIndex + 1}`;
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,
@@ -879,7 +879,7 @@ router.post("/deleteAnexo", async (req, res) => {
     }
 
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
-    const range = "ANEXOS_TEC!A1:M1000";
+    const range = "ANEXOS_TEC!A1:R1000";
     const sheets = google.sheets({ version: "v4", auth: jwtClient });
 
     const responseSheet = await sheets.spreadsheets.values.get({
@@ -896,7 +896,7 @@ router.post("/deleteAnexo", async (req, res) => {
     }
 
     const emptyRow = ["", "", "", "", "", "", "", "", "", "", "", "", ""];
-    const updateRange = `ANEXOS_TEC!A${rowIndex + 1}:M${rowIndex + 1}`;
+    const updateRange = `ANEXOS_TEC!A${rowIndex + 1}:R${rowIndex + 1}`;
 
     await sheets.spreadsheets.values.update({
       spreadsheetId,

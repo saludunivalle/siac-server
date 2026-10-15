@@ -76,7 +76,7 @@ const getSheetRange = (sheetName) => {
     Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
     HISTORICO: "HISTORICO!A1:K5000",
     ESTADISTICAS: "ESTADISTICAS!A1:R5000",
-    RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:H1000",
+    RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:I1000",
   };
   return ranges[sheetName];
 };
@@ -111,7 +111,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
           HISTORICO: "HISTORICO!A1:K5000",
           ESTADISTICAS: "ESTADISTICAS!A1:R5000",
-          RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:H1000",
+          RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:I1000",
         }),
       );
       return res
@@ -441,7 +441,7 @@ router.post("/docServ", async (req, res) => {
         range = "HORARIOS!A1:K1000";
         break;
       case "RESUMEN_ASIGNATURAS":
-        range = "RESUMEN_ASIGNATURAS!A1:H1000";
+        range = "RESUMEN_ASIGNATURAS!A1:I1000";
         break;
       default:
         return res.status(400).json({ error: "Nombre de hoja no válido" });

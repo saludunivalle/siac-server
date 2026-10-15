@@ -984,7 +984,7 @@ router.post("/updatePractice", async (req, res) => {
   try {
     const { updateData, id, sheetName } = req.body;
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
-    const range = `${sheetName}!A1:I1000`; // Asegúrate de tener el rango correcto
+    const range = `${sheetName}!A1:O1000`; // Asegúrate de tener el rango correcto
     const sheets = google.sheets({ version: "v4", auth: jwtClient });
 
     const responseSheet = await sheets.spreadsheets.values.get({
@@ -1001,7 +1001,7 @@ router.post("/updatePractice", async (req, res) => {
     }
 
     // Actualizar la fila
-    const updatedRange = `${sheetName}!A${rowIndex + 1}:I${rowIndex + 1}`;
+    const updatedRange = `${sheetName}!A${rowIndex + 1}:O${rowIndex + 1}`;
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,

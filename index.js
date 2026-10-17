@@ -77,6 +77,7 @@ const getSheetRange = (sheetName) => {
     HISTORICO: "HISTORICO!A1:K5000",
     ESTADISTICAS: "ESTADISTICAS!A1:R5000",
     RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:J1000",
+    Acciones: "Acciones!A1:AF1000",
   };
   return ranges[sheetName];
 };
@@ -112,6 +113,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           HISTORICO: "HISTORICO!A1:K5000",
           ESTADISTICAS: "ESTADISTICAS!A1:R5000",
           RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:J1000",
+          Acciones: "Acciones!A1:AF1000",
         }),
       );
       return res
@@ -211,6 +213,63 @@ router.post("/sendData", async (req, res) => {
       });
   }
 });
+
+const obtenerMaestroEsceulas = async () => {
+  const sheets = google.sheets({ version: "v4", auth: jwtClient });
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: "1M7yNDsfjAxE7WdTFMqIEPGTCHK9zOf7DlNIETaMk3RI",
+    range: "Acciones!A1:AF2000",
+  });
+
+  return sheetValuesToObject(response.data.values);
+};
+
+const obtenerMaestroDepartamentos = async () => {
+  const sheets = google.sheets({ version: "v4", auth: jwtClient });
+
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: "170fPAwZbZTBwetu-bRKoGhBjnIU5WUfEvPfWdKRGEOM",
+    range: "Acciones!A1:AF1000",
+  });
+
+  return sheetValuesToObject(response.data.values);
+};
+
+const sheetHandlers = {
+  maestroEsceulas: obtenerMaestroEsceulas,
+  maestroDepartamentos: obtenerMaestroDepartamentos,
+};
+
+router.post("/getSheetMaestros", async (req, res) => {
+  try {
+    const { sheet } = req.body;
+
+    const handler = sheetHandlers[sheet];
+
+    if (!handler) {
+      return res.status(400).json({
+        status: false,
+        error: "Hoja no válida",
+      });
+    }
+
+    const data = await handler();
+
+    res.json({
+      status: true,
+      data,
+    });
+  } catch (error) {
+    console.error("Error obteniendo la hoja:", error);
+
+    res.status(500).json({
+      status: false,
+      error: error.message,
+    });
+  }
+});
+
 
 //Función para obtener datos de las hojas de cálculo principales
 router.post("/", (req, res) =>

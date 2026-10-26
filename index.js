@@ -72,7 +72,7 @@ const getSheetRange = (sheetName) => {
     ASIGNATURAS: "ASIGNATURAS!A1:K1000",
     ESQUEMAS: "ESQUEMAS!A1:N1000",
     HORARIIOS: "HORARIOS_PRACT!A1:K1000",
-    Esc_Practica: "ESC_PRACTICA!A1:D1000",
+    Esc_Practica: "ESC_PRACTICA!A1:T1000",
     Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
     HISTORICO: "HISTORICO!A1:K5000",
     ESTADISTICAS: "ESTADISTICAS!A1:R5000",
@@ -108,7 +108,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           ASIGNATURAS: "ASIGNATURAS!A1:K1000",
           HORARIIOS: "HORARIOS_PRACT!A1:K1000",
           ESQUEMAS: "ESQUEMAS!A1:N1000",
-          Esc_Practica: "ESC_PRACTICA!A1:D1000",
+          Esc_Practica: "ESC_PRACTICA!A1:T1000",
           Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
           HISTORICO: "HISTORICO!A1:K5000",
           ESTADISTICAS: "ESTADISTICAS!A1:R5000",
@@ -473,7 +473,7 @@ router.post("/docServ", async (req, res) => {
         range = "ASIG_X_PROG!A1:E1000";
         break;
       case "Esc_Practica":
-        range = "ESC_PRACTICA!A1:D1000";
+        range = "ESC_PRACTICA!A1:T1000";
         break;
       case "Rel_Esc_Practica":
         range = "REL_ESC_PRACTICA!A1:G1000";
@@ -1173,7 +1173,7 @@ router.post("/getInstituciones", async (req, res) => {
   try {
     const sheets = google.sheets({ version: "v4", auth: jwtClient });
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
-    const range = "ESC_PRACTICA!A1:F1000"; // Columnas A (id), B (nombre), C (tipología), D (código), E (fecha_inicio), F (fecha_fin)
+    const range = "ESC_PRACTICA!A1:T1000"; // Columnas A (id), B (nombre), C (tipología), D (código), E (fecha_inicio), F (fecha_fin)
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,

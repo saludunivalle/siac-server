@@ -497,6 +497,7 @@ router.post("/docServ", async (req, res) => {
         break;
       case "PRACTICAS":
         range = "PRACTICAS!A1:K1000";  
+        break;
       case "ESQUEMAS":
         range = "ESQUEMAS!A1:N1000";
         break;

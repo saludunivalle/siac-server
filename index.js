@@ -70,6 +70,7 @@ const getSheetRange = (sheetName) => {
     Act_x_Prog_Est: "ACT_X_PROG_ESTADOS!A1:D1000",
     Asig_X_Prog: "ASIG_X_PROG!A1:D1000",
     ASIGNATURAS: "ASIGNATURAS!A1:K1000",
+    PRACTICAS: "PRACTICAS!A1:K1000",
     ESQUEMAS: "ESQUEMAS!A1:N1000",
     HORARIIOS: "HORARIOS_PRACT!A1:K1000",
     Esc_Practica: "ESC_PRACTICA!A1:T1000",
@@ -106,6 +107,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           Act_x_Prog_Est: "ACT_X_PROG_ESTADOS!A1:D1000",
           Asig_X_Prog: "ASIG_X_PROG!A1:D1000",
           ASIGNATURAS: "ASIGNATURAS!A1:K1000",
+          PRACTICAS: "PRACTICAS!A1:K1000",     
           HORARIIOS: "HORARIOS_PRACT!A1:K1000",
           ESQUEMAS: "ESQUEMAS!A1:N1000",
           Esc_Practica: "ESC_PRACTICA!A1:T1000",
@@ -493,6 +495,8 @@ router.post("/docServ", async (req, res) => {
       case "ASIGNATURAS":
         range = "ASIGNATURAS!A1:K1000";
         break;
+      case "PRACTICAS":
+        range = "PRACTICAS!A1:K1000";  
       case "ESQUEMAS":
         range = "ESQUEMAS!A1:N1000";
         break;

@@ -70,7 +70,7 @@ const getSheetRange = (sheetName) => {
     Act_x_Prog_Est: "ACT_X_PROG_ESTADOS!A1:D1000",
     Asig_X_Prog: "ASIG_X_PROG!A1:D1000",
     ASIGNATURAS: "ASIGNATURAS!A1:O1000",
-    PRACTICAS: "PRACTICAS!A1:J1000",
+    PRACTICAS: "PRACTICAS!A1:Q1000",
     ESQUEMAS: "ESQUEMAS!A1:R1000",
     HORARIIOS: "HORARIOS_PRACT!A1:K1000",
     Esc_Practica: "ESC_PRACTICA!A1:T1000",
@@ -107,7 +107,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           Act_x_Prog_Est: "ACT_X_PROG_ESTADOS!A1:D1000",
           Asig_X_Prog: "ASIG_X_PROG!A1:D1000",
           ASIGNATURAS: "ASIGNATURAS!A1:O1000",
-          PRACTICAS: "PRACTICAS!A1:J1000",
+          PRACTICAS: "PRACTICAS!A1:Q1000",
           HORARIIOS: "HORARIOS_PRACT!A1:K1000",
           ESQUEMAS: "ESQUEMAS!A1:R1000",
           Esc_Practica: "ESC_PRACTICA!A1:T1000",
@@ -496,7 +496,7 @@ router.post("/docServ", async (req, res) => {
         range = "ASIGNATURAS!A1:O1000";
         break;
       case "PRACTICAS":
-        range = "PRACTICAS!A1:J1000";
+        range = "PRACTICAS!A1:Q1000";
         break;
       case "ESQUEMAS":
         range = "ESQUEMAS!A1:R1000";
@@ -1050,7 +1050,7 @@ router.post("/updatePractice", async (req, res) => {
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
     const lastColumn = {
       ASIGNATURAS: "O",
-      PRACTICAS: "J",
+      PRACTICAS: "Q",
       ESQUEMAS: "R",
       HORARIOS: "K",
       RESUMEN_ASIGNATURAS: "J",
@@ -1103,7 +1103,7 @@ router.post("/deletePractice", async (req, res) => {
   try {
     const { id, sheetName } = req.body;
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
-    const range = `${sheetName}!A1:I1000`; // Rango de la hoja donde buscar
+    const range = `${sheetName}!A1:Q1000`; // Rango de la hoja donde buscar
     const sheets = google.sheets({ version: "v4", auth: jwtClient });
 
     console.log("Intentando eliminar el ID:", id);

@@ -70,9 +70,9 @@ const getSheetRange = (sheetName) => {
     Act_x_Prog_Est: "ACT_X_PROG_ESTADOS!A1:D1000",
     Asig_X_Prog: "ASIG_X_PROG!A1:D1000",
     ASIGNATURAS: "ASIGNATURAS!A1:O1000",
-    PRACTICAS: "PRACTICAS!A1:Q1000",
+    PRACTICAS: "PRACTICAS!A1:X1000",
     ESQUEMAS: "ESQUEMAS!A1:R1000",
-    HORARIIOS: "HORARIOS_PRACT!A1:K1000",
+    HORARIIOS: "HORARIOS_PRACT!A1:O1000",
     Esc_Practica: "ESC_PRACTICA!A1:T1000",
     Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
     HISTORICO: "HISTORICO!A1:K5000",
@@ -107,8 +107,8 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           Act_x_Prog_Est: "ACT_X_PROG_ESTADOS!A1:D1000",
           Asig_X_Prog: "ASIG_X_PROG!A1:D1000",
           ASIGNATURAS: "ASIGNATURAS!A1:O1000",
-          PRACTICAS: "PRACTICAS!A1:Q1000",
-          HORARIIOS: "HORARIOS_PRACT!A1:K1000",
+          PRACTICAS: "PRACTICAS!A1:X1000",
+          HORARIIOS: "HORARIOS_PRACT!A1:O1000",
           ESQUEMAS: "ESQUEMAS!A1:R1000",
           Esc_Practica: "ESC_PRACTICA!A1:T1000",
           Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
@@ -496,13 +496,13 @@ router.post("/docServ", async (req, res) => {
         range = "ASIGNATURAS!A1:O1000";
         break;
       case "PRACTICAS":
-        range = "PRACTICAS!A1:Q1000";
+        range = "PRACTICAS!A1:X1000";
         break;
       case "ESQUEMAS":
         range = "ESQUEMAS!A1:R1000";
         break;
       case "HORARIOS":
-        range = "HORARIOS!A1:K1000";
+        range = "HORARIOS!A1:O1000";
         break;
       case "RESUMEN_ASIGNATURAS":
         range = "RESUMEN_ASIGNATURAS!A1:J1000";
@@ -1050,9 +1050,10 @@ router.post("/updatePractice", async (req, res) => {
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
     const lastColumn = {
       ASIGNATURAS: "O",
-      PRACTICAS: "Q",
+      PRACTICAS: "X",
+      ANEXOS_TEC: "AN",
       ESQUEMAS: "R",
-      HORARIOS: "K",
+      HORARIOS: "O",
       RESUMEN_ASIGNATURAS: "J",
     }[sheetName] || "O";
     const range = `${sheetName}!A1:${lastColumn}1000`;

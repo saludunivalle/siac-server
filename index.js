@@ -77,7 +77,7 @@ const getSheetRange = (sheetName) => {
     Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
     HISTORICO: "HISTORICO!A1:K5000",
     ESTADISTICAS: "ESTADISTICAS!A1:R5000",
-    RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:K1000",
+    RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:L1000",
     Acciones: "Acciones!A1:AF1000",
   };
   return ranges[sheetName];
@@ -114,7 +114,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
           HISTORICO: "HISTORICO!A1:K5000",
           ESTADISTICAS: "ESTADISTICAS!A1:R5000",
-          RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:K1000",
+          RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:L1000",
           Acciones: "Acciones!A1:AF1000",
         }),
       );
@@ -470,7 +470,7 @@ router.post("/upsertResumenAsignatura", async (req, res) => {
   try {
     const { row, id_programa, id_asignatura, numero_periodo } = req.body;
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
-    const range = "RESUMEN_ASIGNATURAS!A1:K1000";
+    const range = "RESUMEN_ASIGNATURAS!A1:L1000";
     const sheets = google.sheets({ version: "v4", auth: jwtClient });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -509,7 +509,7 @@ router.post("/upsertResumenAsignatura", async (req, res) => {
       );
     });
     const rowIndex = match >= 0 ? match + 2 : values.length + 1;
-    const updatedRange = `RESUMEN_ASIGNATURAS!A${rowIndex}:K${rowIndex}`;
+    const updatedRange = `RESUMEN_ASIGNATURAS!A${rowIndex}:L${rowIndex}`;
     const sheetsResponse = await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: updatedRange,
@@ -571,7 +571,7 @@ router.post("/docServ", async (req, res) => {
         range = "HORARIOS!A1:O1000";
         break;
       case "RESUMEN_ASIGNATURAS":
-        range = "RESUMEN_ASIGNATURAS!A1:K1000";
+        range = "RESUMEN_ASIGNATURAS!A1:L1000";
         break;
       default:
         return res.status(400).json({ error: "Nombre de hoja no válido" });
@@ -1120,7 +1120,7 @@ router.post("/updatePractice", async (req, res) => {
       ANEXOS_TEC: "AN",
       ESQUEMAS: "R",
       HORARIOS: "O",
-      RESUMEN_ASIGNATURAS: "K",
+      RESUMEN_ASIGNATURAS: "L",
     }[sheetName] || "O";
     const range = `${sheetName}!A1:${lastColumn}1000`;
     const sheets = google.sheets({ version: "v4", auth: jwtClient });

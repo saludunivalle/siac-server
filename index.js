@@ -77,7 +77,7 @@ const getSheetRange = (sheetName) => {
     Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
     HISTORICO: "HISTORICO!A1:K5000",
     ESTADISTICAS: "ESTADISTICAS!A1:R5000",
-    RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:J1000",
+    RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:K1000",
     Acciones: "Acciones!A1:AF1000",
   };
   return ranges[sheetName];
@@ -114,7 +114,7 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
           HISTORICO: "HISTORICO!A1:K5000",
           ESTADISTICAS: "ESTADISTICAS!A1:R5000",
-          RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:J1000",
+          RESUMEN_ASIGNATURAS: "RESUMEN_ASIGNATURAS!A1:K1000",
           Acciones: "Acciones!A1:AF1000",
         }),
       );
@@ -464,6 +464,72 @@ router.post("/sendDocServ", async (req, res) => {
   }
 });
 
+// Inserta o actualiza un resumen por la llave lógica programa + asignatura + período.
+// Esto evita duplicados aunque una fila histórica no tenga un ID válido.
+router.post("/upsertResumenAsignatura", async (req, res) => {
+  try {
+    const { row, id_programa, id_asignatura, numero_periodo } = req.body;
+    const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
+    const range = "RESUMEN_ASIGNATURAS!A1:K1000";
+    const sheets = google.sheets({ version: "v4", auth: jwtClient });
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+      key: process.env.key,
+    });
+    const values = response.data.values || [];
+    const headers = (values[0] || []).map((header) =>
+      String(header || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, ""),
+    );
+    const findHeader = (...names) => {
+      const wanted = names.map((name) =>
+        String(name)
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, ""),
+      );
+      return headers.findIndex((header) => wanted.includes(header));
+    };
+    const programIndex = findHeader("id_programa", "programa");
+    const subjectIndex = findHeader("id_asignatura", "asignatura");
+    const periodIndex = findHeader("numero_periodo", "periodo");
+    const match = values.slice(1).findIndex((candidate) => {
+      const program = programIndex >= 0 ? candidate[programIndex] : candidate[1];
+      const subject = subjectIndex >= 0 ? candidate[subjectIndex] : candidate[2];
+      const period = periodIndex >= 0 ? candidate[periodIndex] : candidate[3];
+      return (
+        String(program || "").trim() === String(id_programa || "").trim() &&
+        String(subject || "").trim() === String(id_asignatura || "").trim() &&
+        String(period || "").trim() === String(numero_periodo || "").trim()
+      );
+    });
+    const rowIndex = match >= 0 ? match + 2 : values.length + 1;
+    const updatedRange = `RESUMEN_ASIGNATURAS!A${rowIndex}:K${rowIndex}`;
+    const sheetsResponse = await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: updatedRange,
+      valueInputOption: "RAW",
+      resource: { values: [row] },
+      key: process.env.key,
+    });
+    return res.status(200).json({
+      status: sheetsResponse.status === 200,
+      updated: match >= 0,
+      row: rowIndex,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: false,
+      error: "No se pudo guardar el resumen de asignatura",
+    });
+  }
+});
+
 //Función para obtener datos de la hoja de cálculo de Docencia y Servicio
 router.post("/docServ", async (req, res) => {
   try {
@@ -505,7 +571,7 @@ router.post("/docServ", async (req, res) => {
         range = "HORARIOS!A1:O1000";
         break;
       case "RESUMEN_ASIGNATURAS":
-        range = "RESUMEN_ASIGNATURAS!A1:J1000";
+        range = "RESUMEN_ASIGNATURAS!A1:K1000";
         break;
       default:
         return res.status(400).json({ error: "Nombre de hoja no válido" });
@@ -1054,7 +1120,7 @@ router.post("/updatePractice", async (req, res) => {
       ANEXOS_TEC: "AN",
       ESQUEMAS: "R",
       HORARIOS: "O",
-      RESUMEN_ASIGNATURAS: "J",
+      RESUMEN_ASIGNATURAS: "K",
     }[sheetName] || "O";
     const range = `${sheetName}!A1:${lastColumn}1000`;
     const sheets = google.sheets({ version: "v4", auth: jwtClient });

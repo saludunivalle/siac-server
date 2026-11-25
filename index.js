@@ -69,10 +69,13 @@ const getSheetRange = (sheetName) => {
     Proc_Fases_Doc: "PROC_FASES!I1:L1000",
     Act_x_Prog_Est: "ACT_X_PROG_ESTADOS!A1:D1000",
     Asig_X_Prog: "ASIG_X_PROG!A1:D1000",
-    ASIGNATURAS: "ASIGNATURAS!A1:O1000",
-    PRACTICAS: "PRACTICAS!A1:X1000",
-    ESQUEMAS: "ESQUEMAS!A1:R1000",
+    ASIGNATURAS: "ASIGNATURAS!A1:K1000",
+    PRACTICAS: "PRACTICAS!A1:K1000",
+    PRACTICA_ESCENARIO: "PRACTICA_ESCENARIO!A1:O1000",
+    PRACTICA_ESCENARIO_GRUPO: "PRACTICA_ESCENARIO_GRUPO!A1:M1000",
+    ESQUEMAS: "ESQUEMAS!A1:T1000",
     HORARIIOS: "HORARIOS_PRACT!A1:O1000",
+    HORARIOS: "HORARIOS!A1:S1000",
     Esc_Practica: "ESC_PRACTICA!A1:T1000",
     Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
     HISTORICO: "HISTORICO!A1:K5000",
@@ -106,10 +109,12 @@ const handleSheetRequest = async (req, res, spreadsheetId) => {
           Proc_Fases_Doc: "PROC_FASES!I1:L1000",
           Act_x_Prog_Est: "ACT_X_PROG_ESTADOS!A1:D1000",
           Asig_X_Prog: "ASIG_X_PROG!A1:D1000",
-          ASIGNATURAS: "ASIGNATURAS!A1:O1000",
-          PRACTICAS: "PRACTICAS!A1:X1000",
+          ASIGNATURAS: "ASIGNATURAS!A1:K1000",
+          PRACTICAS: "PRACTICAS!A1:K1000",
+          PRACTICA_ESCENARIO: "PRACTICA_ESCENARIO!A1:O1000",
+          PRACTICA_ESCENARIO_GRUPO: "PRACTICA_ESCENARIO_GRUPO!A1:M1000",
           HORARIIOS: "HORARIOS_PRACT!A1:O1000",
-          ESQUEMAS: "ESQUEMAS!A1:R1000",
+          ESQUEMAS: "ESQUEMAS!A1:T1000",
           Esc_Practica: "ESC_PRACTICA!A1:T1000",
           Rel_Esc_Practica: "REL_ESC_PRACTICA!A1:E1000",
           HISTORICO: "HISTORICO!A1:K5000",
@@ -559,16 +564,22 @@ router.post("/docServ", async (req, res) => {
         range = "PROGRAMAS!A1:AH1000";
         break;
       case "ASIGNATURAS":
-        range = "ASIGNATURAS!A1:O1000";
+        range = "ASIGNATURAS!A1:K1000";
         break;
       case "PRACTICAS":
-        range = "PRACTICAS!A1:X1000";
+        range = "PRACTICAS!A1:K1000";
+        break;
+      case "PRACTICA_ESCENARIO":
+        range = "PRACTICA_ESCENARIO!A1:O1000";
+        break;
+      case "PRACTICA_ESCENARIO_GRUPO":
+        range = "PRACTICA_ESCENARIO_GRUPO!A1:M1000";
         break;
       case "ESQUEMAS":
-        range = "ESQUEMAS!A1:R1000";
+        range = "ESQUEMAS!A1:T1000";
         break;
       case "HORARIOS":
-        range = "HORARIOS!A1:O1000";
+        range = "HORARIOS!A1:S1000";
         break;
       case "RESUMEN_ASIGNATURAS":
         range = "RESUMEN_ASIGNATURAS!A1:L1000";
@@ -1115,11 +1126,13 @@ router.post("/updatePractice", async (req, res) => {
     const { updateData, id, sheetName } = req.body;
     const spreadsheetId = "1hPcfadtsMrTOQmH-fDqk4d1pPDxYPbZ712Xv4ppEg3Y";
     const lastColumn = {
-      ASIGNATURAS: "O",
-      PRACTICAS: "X",
+      ASIGNATURAS: "K",
+      PRACTICAS: "K",
+      PRACTICA_ESCENARIO: "O",
+      PRACTICA_ESCENARIO_GRUPO: "M",
       ANEXOS_TEC: "AN",
-      ESQUEMAS: "R",
-      HORARIOS: "O",
+      ESQUEMAS: "T",
+      HORARIOS: "S",
       RESUMEN_ASIGNATURAS: "L",
     }[sheetName] || "O";
     const range = `${sheetName}!A1:${lastColumn}1000`;

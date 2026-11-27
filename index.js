@@ -593,10 +593,14 @@ router.post("/docServ", async (req, res) => {
       range,
       key: process.env.key,
     });
-    console.log(sheetValuesToObject(response.data.values));
+    const data = sheetValuesToObject(response.data.values || []);
+    // Evitar imprimir toda la hoja: ESQUEMAS, HORARIOS y los grupos pueden
+    // contener cientos de filas y el log completo hace que Vercel agote el
+    // tiempo de ejecución antes de responder al wizard.
+    console.log(`docServ ${req.body.sheetName}: ${data.length} filas`);
     res.json({
       status: true,
-      data: sheetValuesToObject(response.data.values),
+      data,
     });
   } catch (error) {
     console.log("error", error);
